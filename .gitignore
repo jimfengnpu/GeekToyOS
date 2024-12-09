@@ -1,0 +1,10 @@
+/obj
+/hd
+/.vscode
+/mnt
+*.o
+*.a
+*.img
+*.iso
+*.bin
+*.log
