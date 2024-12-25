@@ -5,7 +5,7 @@ SECTIONS
         . = 0x100000;
 
         PROVIDE(kern_start = .);
-        PROVIDE(kern_init_start = .);
+        PROVIDE(kern_text_start = .);
         .init.text :
         {
                 . = ALIGN(8);
@@ -13,39 +13,39 @@ SECTIONS
                 KEEP(*(.multiboot))
                 PROVIDE(multiboot_header_end = .);
                 *(.init.text)
-                . = ALIGN(4096);
         }
-        .init.data :
-        {
-                *(.init.data)
-                . = ALIGN(4096);
-        }
-
-        PROVIDE(kern_init_end = .);
-
         . += KERN_BASE;
-
-        PROVIDE(kern_text_start = . - KERN_BASE);
-
         .text : AT(ADDR(.text) - KERN_BASE)
         {
                 *(.text)
-                . = ALIGN(4096);
         }
 
         PROVIDE(kern_text_end = . - KERN_BASE);
-        PROVIDE(kern_data_start = . - KERN_BASE);
+        . -= KERN_BASE;
+
+        PROVIDE(kern_data_start = .);
+        .init.data :AT(ADDR(.init.data))
+        {
+                *(.init.data)
+        }
+
+        . += KERN_BASE;
 
         .data : AT(ADDR(.data) - KERN_BASE)
         {
                 *(.data)
                 *(.rodata)
-                . = ALIGN(4096);
         }
+        . -= KERN_BASE;
+        .init.bss :
+        {
+                *(.init.bss)
+        }
+        . += KERN_BASE;
+
         .bss : AT(ADDR(.bss) - KERN_BASE)
         {
                 *(.bss)
-                . = ALIGN(4096);
         }
 
         PROVIDE(kern_data_end = . - KERN_BASE);
@@ -53,12 +53,10 @@ SECTIONS
         .stab : AT(ADDR(.stab) - KERN_BASE)
         {
                 *(.stab)
-                . = ALIGN(4096);
         }
         .stabstr : AT(ADDR(.stabstr) - KERN_BASE)
         {
                 *(.stabstr)
-                . = ALIGN(4096);
         }
 
         PROVIDE(kern_end = . - KERN_BASE);

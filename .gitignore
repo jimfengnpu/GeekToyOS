@@ -2,6 +2,7 @@
 /hd
 /.vscode
 /mnt
+.gdb_history
 *.o
 *.a
 *.img

@@ -11,8 +11,6 @@
 extern char kern_start[];
 extern char multiboot_header_start[];
 extern char multiboot_header_end[];
-extern char kern_init_start[];
-extern char kern_init_end[];
 extern char kern_text_start[];
 extern char kern_text_end[];
 extern char kern_data_start[];

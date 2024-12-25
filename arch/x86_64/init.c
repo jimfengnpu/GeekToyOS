@@ -23,7 +23,7 @@ __mboot_header const struct multiboot_header_tag header_end = {
 };
 
 
-__init_text void boot_main()
+__init_text void boot_main(u32 magic, u32 mboot_info_phy)
 {
     while(1);
 }

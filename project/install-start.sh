@@ -16,7 +16,7 @@ if [[ $BOOT_TYPE == "efi" ]]
 then
 	sudo mkdir mnt/efi
 	sudo mount "$INS_DEV"p1 mnt/efi
-	sudo grub-install --target=$GRUB_TARGET --boot-directory=./mnt  --modules="part_gpt all_video"   --efi-directory=./mnt/efi  --bootloader-id=GminiOS
+	sudo grub-install --target=$GRUB_TARGET --boot-directory=./mnt  --modules="part_gpt all_video"   --efi-directory=./mnt/efi  --bootloader-id=GeekToyOS
 else
 	sudo grub-install --target=$GRUB_TARGET --boot-directory=./mnt  --modules="part_msdos all_video" $INS_DEV
 fi
