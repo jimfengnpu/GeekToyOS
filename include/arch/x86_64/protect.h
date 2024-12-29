@@ -1,19 +1,16 @@
-#ifndef X86_PROTECT_H
-#define X86_PROTECT_H
+#ifndef X64_PROTECT_H
+#define X64_PROTECT_H
 #include <lib/types.h>
 // 各个内存段所在全局描述符表下标
 #define SEG_NULL     0
 #define SEG_KTEXT    1
 #define SEG_KDATA    2
-#define SEG_UTEXT    3
-#define SEG_UDATA    4
-#define SEG_TSS      5
+#define SEG_UTEXT32  3
+#define SEG_UTEXT64  4
+#define SEG_UDATA    5
+#define SEG_TSS      6
 
-#define GD_KTEXT    ((SEG_KTEXT) << 3)      // 代码段
-#define GD_KDATA    ((SEG_KDATA) << 3)      // 数据段
-#define GD_UTEXT    ((SEG_UTEXT) << 3)      // 代码段
-#define GD_UDATA    ((SEG_UDATA) << 3)      // 数据段
-#define GD_TSS      ((SEG_TSS) << 3)       // 任务段
+#define GD_SEL(seg) ((seg) << 3)
 
 /* 描述符类型值说明 */
 #define	DA_32			0x4000	/* 32 位段				*/
@@ -51,10 +48,15 @@
 #define PL_USER    (SA_RPL3)
 
 // 各个段的全局描述符表的选择子
-#define KERNEL_CS   ((GD_KTEXT) | PL_KERNEL)
-#define KERNEL_DS   ((GD_KDATA) | PL_KERNEL)
-#define USER_CS     ((GD_UTEXT) | PL_USER)
-#define USER_DS     ((GD_UDATA) | PL_USER)
+#define KERNEL_CS   (GD_SEL(SEG_KTEXT) | PL_KERNEL)
+#define KERNEL_DS   (GD_SEL(SEG_KDATA) | PL_KERNEL)
+#define USER_CS32   (GD_SEL(SEG_UTEXT32) | PL_USER)
+#define USER_CS64   (GD_SEL(SEG_UTEXT64) | PL_USER)
+#define USER_DS     (GD_SEL(SEG_UDATA) | PL_USER)
+
+#define IST_NONE 0
+#define IST_NMI 1
+#define IST_DOUBLE_FAULT 2
 
 // TSS 描述符
 typedef struct tss_entry_s {
@@ -96,6 +98,25 @@ typedef struct tss_entry_s {
         u16 t;            // trap on task switch
         u16 iomb;         // i/o map base address
 } __attribute__((packed)) tss_t;
+
+// TSS 描述符
+typedef struct tss_entry64_s {
+    u32 __zero1;
+    u64 rsp0;
+    u64 rsp1;
+    u64 rsp2;
+    u64 __zero2;
+    u64 ist1;
+    u64 ist2;
+    u64 ist3;
+    u64 ist4;
+    u64 ist5;
+    u64 ist6;
+    u64 ist7;
+    u64 __zero3;
+    u16 __zero4;
+    u16 iomb;
+} __attribute__((packed)) tss64_t;
 
 /* 存储段描述符/系统段描述符 */
 typedef struct descriptor {

@@ -18,10 +18,12 @@
 #define SELECTOR_TI (2)
 #define SELECTOR_INDEX (3)
 #define MULTIBOOT2_BOOTLOADER_MAGIC             0x36d76289
+#include <mem_layout.h>
 /*  The flags for the Multiboot header. */
         .section ".init.text"
 
         .globl  start
+        .globl  ist_stack1, ist_stack2
 start:
         .code32
         # check for multiboot2 header
@@ -112,24 +114,38 @@ start:
         # enter the 64-bit world within a long jmp
         #pushl   $(1 << SELECTOR_INDEX)
         #pushl   
-        ljmp    $0x08, $boot_main
+        ljmp    $0x08, $.long_mode
 
         # we shouldn't get here...
         
 .loop:   hlt
         jmp     .loop
-
+        .code64
+.long_mode:
+        mov     $(KERN_BASE), %rax
+        addq  %rax, %rsp
+        addq  %rax, %rbp
+        call boot_main
         .align 0x1000
         # global segment descriptor table
         .globl gdt64, gdt64_ptr
 gdt64:
         .quad 0 # first one must be zero
-gdt64_code_segment:
-        .quad 0x002F9A000000FFFF # exec/read
-gdt64_data_segment:
-        .quad 0x000F92000000FFFF # read/write
-gdt64_code_segment_compat:
-        .quad 0x00CF9A000000FFFF # read/write
+gdt64_kcode:
+        .quad 0x00209A0000000000 # exec/read
+gdt64_kdata:
+        .quad 0x0000920000000000 # read/write
+gdt64_ucode32:
+        .quad 0x0000000000000000 # read/write
+gdt64_ucode64:
+        .quad 0x0020FA0000000000
+gdt64_udata:
+        .quad 0x0000F20000000000
+gdt64_tss:
+        .short 103
+        .short 0
+        .long 0x00008900
+        .quad 0
 gdt64_ptr:
         .short gdt64_ptr - gdt64 - 1    # GDT limit
         .long gdt64                     # GDT Addr
@@ -138,6 +154,10 @@ gdt64_ptr:
 stack:
         .space  STACK_SIZE
 stacktop:
+        .space  PAGE_SIZE
+ist_stack1:
+        .space  PAGE_SIZE
+ist_stack2:
         .align 0x1000
 pgd:
         .space  PAGE_SIZE

@@ -1,8 +1,8 @@
 #ifndef X86_INTERRUPT_H
 #define X86_INTERRUPT_H
-#include <kernel/types.h>
+#include <lib/types.h>
 // 中断保存的寄存器类型
-typedef struct pt_regs_t
+typedef struct Trapframe
 {
 
     // 用于保存用户的数据段描述符
@@ -35,10 +35,10 @@ typedef struct pt_regs_t
     u32 esp;
     u16 ss;
     u16 padding3;
-} pt_regs_t;
+} trapframe_t;
 
 // 定义中断处理函数指针
-typedef void (*interrupt_handler_t)(pt_regs_t *);
+typedef void (*interrupt_handler_t)(trapframe_t *);
 
 // 中断号定义
 #define INT_DIVIDE_ERROR 0
@@ -61,6 +61,7 @@ typedef void (*interrupt_handler_t)(pt_regs_t *);
 #define INT_ALIGNMENT 17
 #define INT_MACHINE_CHECK 18
 #define INT_SIMD_FLOAT 19
+#define INT_SYSCALL 0x80
 
 // 定义IRQ
 #define IRQ0 32  // 电脑系统计时器
@@ -80,8 +81,8 @@ typedef void (*interrupt_handler_t)(pt_regs_t *);
 #define IRQ14 46 // IDE0 传输控制使用
 #define IRQ15 47 // IDE1 传输控制使用
 
-// 初始化中断描述符表
-void init_idt(void);
+// 初始化中断
+void interrupt_init(void);
 
 
 // 注册一个中断处理函数

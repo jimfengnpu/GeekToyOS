@@ -39,7 +39,7 @@ __init_text void boot_main(u32 magic, u32 mboot_info_phy)
     /* 此处开始调用函数不再使用init段*/
     mboot_info = (struct multiboot_tag*)kaddr(mboot_info_phy);
     init_gdt();
-    init_idt();
+    interrupt_init();
     kernel_main();
 
 }

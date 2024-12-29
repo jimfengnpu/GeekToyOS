@@ -20,11 +20,11 @@ SECTIONS
                 *(.text)
         }
 
-        PROVIDE(kern_text_end = . - KERN_BASE);
         . -= KERN_BASE;
-
+        PROVIDE(kern_text_end = .);
+        . = ALIGN(0x1000);
         PROVIDE(kern_data_start = .);
-        .init.data :AT(ADDR(.init.data))
+        .init.data :
         {
                 *(.init.data)
         }
@@ -37,6 +37,8 @@ SECTIONS
                 *(.rodata)
         }
         . -= KERN_BASE;
+        PROVIDE(kern_data_end = .);
+        . = ALIGN(0x1000);
         .init.bss :
         {
                 *(.init.bss)
@@ -48,7 +50,6 @@ SECTIONS
                 *(.bss)
         }
 
-        PROVIDE(kern_data_end = . - KERN_BASE);
 
         .stab : AT(ADDR(.stab) - KERN_BASE)
         {

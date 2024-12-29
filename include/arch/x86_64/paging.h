@@ -1,6 +1,6 @@
 #ifndef X64_PAGING_H
 #define X64_PAGING_H
-#include <kernel/types.h>
+#include <lib/types.h>
 
 
 typedef addr_t pte_t;

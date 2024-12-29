@@ -20,7 +20,7 @@ ISO_FILE=$(OS_NAME).iso
 
 # basic dir and file
 INC_DIRS=include/ include/arch/$(ARCH)/ include/arch/
-KERNEL_SRC_DIRS=arch/$(ARCH) kernel driver fs
+KERNEL_SRC_DIRS=arch/$(ARCH) kernel drivers fs
 LIB_SRC_DIR=lib
 OBJDIR=obj
 KERNEL_FILE=$(OBJDIR)/kernel.bin
@@ -32,7 +32,7 @@ LD=ld
 ASM=as
 AR=ar
 PERL=perl
-CFLAGS= -c -mno-sse -mno-mmx -mno-red-zone -fno-builtin -ffreestanding -fno-stack-protector -fno-pic -Wall -Wextra -std=gnu99 $(addprefix -I,$(INC_DIRS)) -g
+CFLAGS= -c -mno-sse -mno-mmx -mno-red-zone -mcmodel=large -fno-builtin -ffreestanding -fno-stack-protector -fno-pic -Wall -Wextra -std=gnu99 $(addprefix -I,$(INC_DIRS)) -g
 CFLAGS+= -DARCH=$(ARCH)
 LDFLAGS = -nostdlib -z noexecstack -T $(OBJDIR)/$(PROJECT_DIR)/kernel.ld
 ASMFLAGS = $(addprefix -I,$(INC_DIRS))

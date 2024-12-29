@@ -25,8 +25,8 @@ void gdt_set_gate(int num, u32 base, u32 limit, u16 attr) {
 void init_gdt() {
     gp.limit = (sizeof(descriptor_t) * GDT_LENGTH) - 1;
     gp.base = (u32)&gdt;
-    tss[0].ts_ss0 = KERNEL_CS;
-    tss[0].ts_iomb = sizeof(tss_t);
+    tss[0].ss0 = KERNEL_CS;
+    tss[0].iomb = sizeof(tss_t);
     gdt_set_gate(SEG_NULL, 0, 0, 0);                       // Null segment
     gdt_set_gate(SEG_KTEXT, 0, 0xFFFFF, DA_CR | DA_32 | DA_LIMIT_4K | DA_DPL0);
     gdt_set_gate(SEG_KDATA, 0, 0xFFFFF, DA_DRW | DA_32 | DA_LIMIT_4K | DA_DPL0);

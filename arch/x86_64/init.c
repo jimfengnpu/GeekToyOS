@@ -1,5 +1,6 @@
 #include <kernel/kernel.h>
 #include <kernel/multiboot2.h>
+#include <interrupt.h>
 
 #define MBOOT_HEADER_LENGTH 48
 
@@ -25,5 +26,7 @@ __mboot_header const struct multiboot_header_tag header_end = {
 
 __init_text void boot_main(u32 magic, u32 mboot_info_phy)
 {
-    while(1);
+    mboot_info = (struct multiboot_tag*)kaddr(mboot_info_phy);
+    interrupt_init();
+    kernel_main();
 }

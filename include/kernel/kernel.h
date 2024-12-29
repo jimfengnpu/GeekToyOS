@@ -1,7 +1,7 @@
 #ifndef KERNEL_H
 #define KERNEL_H
 
-#include <kernel/types.h>
+#include <lib/types.h>
 #include <kernel/section.h>
 #include <mem_layout.h>
 
@@ -15,5 +15,6 @@
 
 
 void kernel_main();
+
 
 #endif

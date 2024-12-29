@@ -1,6 +1,6 @@
 #ifndef X86_PAGING_H
 #define X86_PAGING_H
-#include <kernel/types.h>
+#include <lib/types.h>
 
 
 typedef u32 pte_t;

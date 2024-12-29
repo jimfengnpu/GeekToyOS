@@ -1,5 +1,6 @@
 #include <cpu.h>
 #include <trap.h>
+#include <protect.h>
 #include <interrupt.h>
 
 #define IO_PIC1   (0x20)	  // Master (IRQs 0-7)
@@ -9,7 +10,7 @@
 #define IO_PIC2C  (IO_PIC2+1)
 
 // 设置 8259A 芯片
-void init_interrupt(void)
+void init_pic(void)
 {
         // 重新映射 IRQ 表
         // 两片级联的 Intel 8259A 芯片
@@ -43,7 +44,7 @@ void init_interrupt(void)
 }
 
 // 重设 8259A 芯片
-void clear_interrupt(u32 intr_no)
+void clear_pic(u32 intr_no)
 {
         // 发送中断结束信号给 PICs
         // 按照我们的设置，从 32 号中断起为用户自定义中断
@@ -86,16 +87,16 @@ static idt_ptr_t idt_ptr;
 static interrupt_handler_t interrupt_handlers[INTERRUPT_MAX] __attribute__((aligned(4)));
 
 // 设置中断描述符
-static void idt_set_gate(u8 num, u32 base, u16 sel, u8 flags);
+static void idt_set_gate(u8 num, u32 base, u8 flags);
 
 // 声明加载 IDTR 的函数
 extern void idt_flush(u32);
 
 // 中断处理函数指针类型
-typedef void (*intr_irq_func_t)();
+typedef void (*intr_func_t)();
 
 // 中断处理函数指针数组
-static intr_irq_func_t intr_irq_func[INTERRUPT_MAX] = {
+static intr_func_t intr_func[INTERRUPT_MAX] = {
     [0] = &intr_0,
     [1] = &intr_1,
     [2] = &intr_2,
@@ -147,23 +148,24 @@ static intr_irq_func_t intr_irq_func[INTERRUPT_MAX] = {
     [47] = &irq_15,
 };
 
-// 初始化中断描述符表
-void init_idt(void)
+// 初始化中断
+void interrupt_init(void)
 {
-    init_interrupt();
+    init_pic();
 
     idt_ptr.limit = sizeof(idt_entry_t) * INTERRUPT_MAX - 1;
     idt_ptr.base = (u32)&idt_entries;
 
     // 0~31:  用于 CPU 的中断处理
     // 32~47: Intel 保留
-    for (u32 i = 0; i < 48; ++i)
+    u32 vec = 0;
+    for(;vec < 48; vec++)
     {
-        idt_set_gate(i, (u32)intr_irq_func[i], 0x08, 0x8E);
+        idt_set_gate(vec, (addr_t)intr_func[i], DA_386IGate);
     }
 
     // 128 (0x80) 将来用于实现系统调用
-    idt_set_gate(128, (u32)intr_128, 0x08, 0xEF);
+    idt_set_gate(INT_SYSCALL, (addr_t)intr_128, DA_386IGate | DA_DPL3);
 
     // 更新设置中断描述符表
     asm volatile(
@@ -172,12 +174,12 @@ void init_idt(void)
 }
 
 // 设置中断描述符
-static void idt_set_gate(u8 num, u32 base, u16 sel, u8 flags)
+static void idt_set_gate(u8 num, u32 base, u8 flags)
 {
     idt_entries[num].base_lo = base & 0xFFFF;
     idt_entries[num].base_hi = (base >> 16) & 0xFFFF;
 
-    idt_entries[num].sel = sel;
+    idt_entries[num].sel = GD_KTEXT;
     idt_entries[num].always0 = 0;
 
     idt_entries[num].flags = flags;
@@ -216,7 +218,7 @@ static const char *intrname(u32 intrno)
 }
 
 // 调用中断处理函数
-void interrupt_handler(pt_regs_t *regs)
+void interrupt_handler(trapframe_t *regs)
 {
     if (interrupt_handlers[regs->int_no])
     {
@@ -235,9 +237,9 @@ void register_interrupt_handler(u8 n, interrupt_handler_t h)
 }
 
 // IRQ 处理函数
-void irq_handler(pt_regs_t *regs)
+void irq_handler(trapframe_t *regs)
 {
-    clear_interrupt(regs->int_no);
+    clear_pic(regs->int_no);
 
     if (interrupt_handlers[regs->int_no])
     {

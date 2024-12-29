@@ -65,7 +65,7 @@ interrupt_common:
 	mov %ax, %es
 	mov %ax, %fs
 	mov %ax, %gs
-	mov %ss, %ax
+	mov %ax, %ss
 	
 	pushl %esp		// 此时的 esp 寄存器的值等价于 pt_regs 结构体的指针
 	call interrupt_handler        // 在 C 语言代码里
