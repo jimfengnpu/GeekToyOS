@@ -99,6 +99,8 @@ typedef struct screen_info{
 }screen_info_t;
 
 extern screen_info_t screen_info;
+u32 trans_color2pixel(u32 color);
 void screen_init();
+void screen_move(int ystep, u32 fill_color);
 void screen_input_char(u32 x, u32 y, u32 front_color, u32 back_color, u32 chr);
 #endif

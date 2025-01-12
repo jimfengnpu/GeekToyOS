@@ -32,8 +32,8 @@ void cputchar(int ch)
     }
     if (console.y == console.ylimit)
     {
-        // todo: scroll screen
-        
+        // scroll screen
+        screen_move(-console.ystep, RGB_BLACK);
         console.y--;
     }
 }
@@ -46,6 +46,7 @@ void console_init()
     console.y = 0;
     console.xlimit = screen_info.width/screen_info.font_width;
     console.ylimit = screen_info.height/screen_info.font_height;
+    klog("console:%dx%d\n", console.xlimit, console.ylimit);
     console.xstep = screen_info.font_width;
     console.ystep = screen_info.font_height;
 }

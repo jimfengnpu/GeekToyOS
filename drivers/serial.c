@@ -10,7 +10,7 @@ void serial_init(void) {}
 void serial_write_com(int UNUSED(com), unsigned char UNUSED(data)) {}
 #else
 
-static int serial_inited;
+static int serial_ok;
 
 void serial_init(void)
 {
@@ -23,6 +23,7 @@ void serial_init(void)
 	outb(COM1_PORT + 2, 0xC7);    // Enable FIFO, clear them, with 14-byte threshold
 	outb(COM1_PORT + 4, 0x0B);    // IRQs enabled, RTS/DSR set
 
+	serial_ok = (inb(COM1_PORT + 5) != 0xFF);
 	// Print a small separator so we can see output clearly
 	const char *msg = "-----------------------------------\n";
 	while (*msg)
@@ -36,6 +37,9 @@ static inline int serial_transmit_empty(uint16_t port)
 
 void serial_write_com(int com, unsigned char data)
 {
+	if(!serial_ok){
+		return;
+	}
 	u16 port;
 	switch (com) {
 		case 1:

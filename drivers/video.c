@@ -1,3 +1,4 @@
+#include <lib/string.h>
 #include <drivers/video.h>
 #include <kernel/multiboot2.h>
 
@@ -153,6 +154,34 @@ static void screen_put_pixel(u32 x, u32 y, u32 pixel)
     }
 }
 
+void screen_move(int ystep, u32 fill_color)
+{
+    int l = 0, r = screen_info.width, u = 0, d = screen_info.height;
+    fill_color = trans_color2pixel(fill_color);
+    if(ystep >= 0)
+    {
+        memmove(screen_info.base + ystep*screen_info.pitch, screen_info.base, (screen_info.height - ystep)*screen_info.pitch);
+        for(u32 y=0; y < ystep; y++)
+        {
+            for(u32 x=0; x < screen_info.width; x++)
+            {
+                screen_put_pixel(x, y, fill_color);
+            }
+        }
+    }else
+    {
+        ystep *= -1;
+        memmove(screen_info.base, screen_info.base + ystep*screen_info.pitch, (screen_info.height - ystep)*screen_info.pitch);
+        for(u32 y=screen_info.height - ystep; y < screen_info.height; y++)
+        {
+            for(u32 x=0; x < screen_info.width; x++)
+            {
+                screen_put_pixel(x, y, fill_color);
+            }
+        }
+    }
+}
+
 // color:RGB
 u32 trans_color2pixel(u32 color)
 {
@@ -201,7 +230,7 @@ void screen_input_char(u32 x, u32 y, u32 front_color, u32 back_color, u32 chr)
         if(screen_info.table){
             chr = screen_info.table[chr];
         }
-        if(chr >= screen_info.font_header->numglyph || chr < 0){
+        if(chr >= screen_info.font_header->numglyph){
             chr = 0;
         }
         u8 *glyph = screen_info.glyph + chr*screen_info.bytesperglyph;
