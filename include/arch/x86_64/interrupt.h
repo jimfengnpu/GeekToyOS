@@ -23,17 +23,6 @@ typedef struct Trapframe
     u64 ss;
 } trapframe_t;
 
-// 定义中断处理函数指针
-typedef void (*interrupt_handler_t)(trapframe_t *);
-
-typedef struct isr_info{
-    enum isr_type {
-		ISR_IRQ, // Normal IRQs that require EOI
-		ISR_EXCEPTION, // CPU exceptions like page faults
-		ISR_NOP, // NOP for spurious interrupts
-	} type;
-    interrupt_handler_t handler;
-}isr_info;
 
 // 中断号定义
 #define INT_DIVIDE_ERROR 0
@@ -57,18 +46,6 @@ typedef struct isr_info{
 #define INT_MACHINE_CHECK 18
 #define INT_SIMD_FLOAT 19
 
-#define IRQ_APIC_SPURIOUS 0xFF
-#define IRQ_APIC_BASE 0x30
-#define IRQ_LINT_BASE (IRQ_APIC_SPURIOUS - 3) // One for each LINT pin, one for timer
-#define IRQ_LINT_TIMER (IRQ_LINT_BASE + 2)
-#define IRQ_NMI (IRQ_LINT_BASE - 1)
-
-#define IRQ_IPI_TOP (IRQ_NMI - 1)
-#define IRQ_IPI_ABORT (IRQ_IPI_TOP - 0)
-#define IRQ_IPI_TLB_SHOOTDOWN (IRQ_IPI_TOP - 1)
-#define IRQ_IPI_SCHED_HINT (IRQ_IPI_TOP - 2)
-
-#define ISA_TO_INTERRUPT(x) (ioapic_isa_to_gsi(x) + IRQ_APIC_BASE)
 
 // // 定义IRQ
 // #define IRQ0 32  // 电脑系统计时器
@@ -91,6 +68,4 @@ typedef struct isr_info{
 // 初始化中断
 void interrupt_init(void);
 
-// 注册一个中断处理函数
-void register_interrupt_handler(u8 vec, u8 type, interrupt_handler_t h);
 #endif

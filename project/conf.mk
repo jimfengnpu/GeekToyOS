@@ -32,18 +32,25 @@ LD=ld
 ASM=as
 AR=ar
 PERL=perl
-CFLAGS= -c -mno-sse -mno-mmx -mno-red-zone -mcmodel=large -fno-builtin -ffreestanding -fno-stack-protector -fno-pic -Wall -Wextra -std=gnu99 $(addprefix -I,$(INC_DIRS)) -g
+CFLAGS= -c -mno-sse -mno-mmx -mno-red-zone -fno-stack-protector -ffreestanding -fno-pic -Wall -Wextra -std=gnu99 $(addprefix -I,$(INC_DIRS)) -g -lgcc
 CFLAGS+= -DARCH=$(ARCH)
-LDFLAGS = -nostdlib -z noexecstack -T $(OBJDIR)/$(PROJECT_DIR)/kernel.ld
+LDFLAGS = -nostdlib -z noexecstack -T $(OBJDIR)/$(PROJECT_DIR)/kernel.ld 
 ASMFLAGS = $(addprefix -I,$(INC_DIRS))
+OBJCOPYFLAGS = 
 
 ifeq ($(ARCH), i386)
 CFLAGS += -m32
 ASMFLAGS += --32
 LDFLAGS += -m elf_i386
+OBJCOPYFLAGS += -O elf32-i386
 else
-CFLAGS += -DARCH_64BIT
+CFLAGS += -DARCH_64BIT -mcmodel=large
 ASMFLAGS += --64
+OBJCOPYFLAGS += -O elf64-x86-64
+endif
+
+ifeq ($(BOOT_TYPE),efi)
+CFLAGS += -DEFI
 endif
 
 # qemu

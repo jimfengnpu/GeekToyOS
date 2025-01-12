@@ -3,13 +3,21 @@
 #include <lib/string.h>
 #include <lib/error.h>
 
-
+// from 6.828 course
 /*
  * Print a number (base <= 16) in reverse order,
  * using specified putch function and associated pointer putdat.
  */
+// change due to gcc __divdi3(ull, u32) failed, so just write one for u long long
+
+static u64 udiv(unsigned long long num, unsigned div, unsigned *rem)
+{
+	// quot = (num * 2^n)/(div * 2^n)
+
+}
+
 static void printnum(void (*putch)(int, void*), void *putdat,
-	unsigned long long num, unsigned base, int width, int padc)
+	unsigned long num, unsigned base, int width, int padc)
 {
 	// first recursively print all preceding (more significant) digits
 	if (num >= base) {
@@ -26,37 +34,15 @@ static void printnum(void (*putch)(int, void*), void *putdat,
 	putch("0123456789abcdef"[num % base], putdat);
 }
 
-// Get an unsigned int of various possible sizes from a varargs list,
-// depending on the lflag parameter.
-static unsigned long long getuint(va_list *ap, int lflag)
-{
-	if (lflag >= 2)
-		return va_arg(*ap, unsigned long long);
-	else if (lflag)
-		return va_arg(*ap, unsigned long);
-	else
-		return va_arg(*ap, unsigned int);
-}
 
-// Same as getuint but signed - can't use getuint
-// because of sign extension
-static long long getint(va_list *ap, int lflag)
-{
-	if (lflag >= 2)
-		return va_arg(*ap, long long);
-	else if (lflag)
-		return va_arg(*ap, long);
-	else
-		return va_arg(*ap, int);
-}
-
-
+// modified due to va_arg/va_list in x86_64 builtin gcc with asm
+// pass as pointer will cause dereference failed and access illegal addr
 void vprintfmt(void (*putch)(int, void*), void *putdat, const char *fmt, va_list ap)
 {
 	register const char *p;
 	register int ch, err;
 	unsigned long long num;
-	int base, lflag, width, precision, altflag;
+	int base, lflag, width, precision, altflag, sgnflag;
 	char padc;
 
 	while (1) {
@@ -71,6 +57,7 @@ void vprintfmt(void (*putch)(int, void*), void *putdat, const char *fmt, va_list
 		width = -1;
 		precision = -1;
 		lflag = 0;
+		sgnflag = 0;
 		altflag = 0;
 	reswitch:
 		switch (ch = *(unsigned char *) fmt++) {
@@ -117,13 +104,15 @@ void vprintfmt(void (*putch)(int, void*), void *putdat, const char *fmt, va_list
 			goto reswitch;
 
 		process_precision:
-			if (width < 0)
-				width = precision, precision = -1;
+			if (width < 0){
+				width = precision;
+				precision = -1;
+			}
 			goto reswitch;
 
 		// long flag (doubled for long long)
 		case 'l':
-			lflag++;
+			if(lflag < 2) lflag++;
 			goto reswitch;
 
 		// character
@@ -160,17 +149,12 @@ void vprintfmt(void (*putch)(int, void*), void *putdat, const char *fmt, va_list
 
 		// (signed) decimal
 		case 'd':
-			num = getint(&ap, lflag);
-			if ((long long) num < 0) {
-				putch('-', putdat);
-				num = -(long long) num;
-			}
+			sgnflag = 1;
 			base = 10;
 			goto number;
 
 		// unsigned decimal
 		case 'u':
-			num = getuint(&ap, lflag);
 			base = 10;
 			goto number;
 
@@ -178,7 +162,6 @@ void vprintfmt(void (*putch)(int, void*), void *putdat, const char *fmt, va_list
 		case 'o':
 			// Replace this with your code.
 			// bluesea
-			num = getuint(&ap, lflag);
 			base = 8;
 			goto number;
 			break;
@@ -187,18 +170,33 @@ void vprintfmt(void (*putch)(int, void*), void *putdat, const char *fmt, va_list
 		case 'p':
 			putch('0', putdat);
 			putch('x', putdat);
-			num = (unsigned long long)va_arg(ap, void *);
+			lflag = 3;
 			base = 16;
 			goto number;
 
 		// (unsigned) hexadecimal
 		case 'x':
-			num = getuint(&ap, lflag);
 			base = 16;
 
 		//bluesea
 		//用printnum封装不同进制下的打印
 		number:
+			switch (lflag)
+			{
+				case 0: num = va_arg(ap, unsigned int); break;// %u/d
+				case 1: num = va_arg(ap, unsigned long); break;// %l
+				case 2: num = va_arg(ap, unsigned long long); break;// %ll
+				case 3: num = (unsigned long long)va_arg(ap, void *); break;// %p
+				default:
+					break;
+			}
+			if(sgnflag){
+				long long sgned = (long long)num;
+				if(sgned < 0){
+					putch('-', putdat);
+					num = -sgned;
+				}
+			}
 			printnum(putch, putdat, num, base, width, padc);
 			break;
 

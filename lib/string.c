@@ -1,7 +1,8 @@
 #include <lib/string.h>
 
 void* memcpy(void* dst, const void* src, size_t n) {
-    char *d = dst, *s = src;
+    char *d = dst;
+    const char *s = src;
     while (n > 0) {
         *(d++) = *(s++);
         n--;
@@ -16,7 +17,8 @@ void* memmove(void* dst, const void* src, size_t n) {
         memcpy(dst, src, n);
     } else 
     {
-        char *d = dst, *s = src;
+        char *d = dst;
+        const char *s = src;
         d += n; s += n;
         while (n > 0) {
             *(--d) = *(--s);
@@ -59,7 +61,6 @@ char* strcat(char* dst, const char* src) {
 char* strncat(char* dst, const char* src, size_t n) {
     if (dst == 0 || src == 0) return 0;
     char* temp = dst;
-    char c;
     while (*temp != '\0') temp++;
     while (n > 0 && (*temp++ = *src++) != '\0')
     {
@@ -97,7 +98,7 @@ char* strncpy(char* dest, const char* src, size_t n) {
     if ((dest == 0) || (src == 0)) { /* for robustness */
         return dest;
     }
-    int i;
+    size_t i;
     for (i = 0; i < n; i++) {
         dest[i] = src[i];
         if (!src[i]) { break; }
@@ -122,7 +123,7 @@ int strcmp(const char* s1, const char* s2) {
 
 int strncmp(const char* s1, const char* s2, size_t  n) {
     if (!s1 || !s2) { return s1 - s2; }
-    int i;
+    size_t i;
     for (i = 0; i < n; i++) {
         if (s1[i] != s2[i]) { return s1[i] - s2[i]; }
     }
@@ -131,19 +132,19 @@ int strncmp(const char* s1, const char* s2, size_t  n) {
 
 char* strchr(const char* s, char c) {
     if (!s) { return 0; }
-    char* p;
+    const char* p;
     for (p = s; *p; p++) {
         if (*p == c) { break; }
     }
-    return (*p == c) ? p : 0;
+    return (*p == c) ? (char*)p : 0;
 }
 
 char* strrchr(const char* s, char c) {
     if (!s) { return 0; }
-    char* r = 0;
+    const char* r = 0;
     while (*s) {
         if (*s == c) { r = s; }
         ++s;
     }
-    return r;
+    return (char*)r;
 }

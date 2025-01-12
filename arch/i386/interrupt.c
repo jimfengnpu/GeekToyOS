@@ -2,6 +2,7 @@
 #include <trap.h>
 #include <protect.h>
 #include <interrupt.h>
+#include <kernel/interrupt.h>
 
 #define IO_PIC1   (0x20)	  // Master (IRQs 0-7)
 #define IO_PIC2   (0xA0)	  // Slave  (IRQs 8-15)
@@ -10,7 +11,7 @@
 #define IO_PIC2C  (IO_PIC2+1)
 
 // 设置 8259A 芯片
-void init_pic(void)
+void pic_init(void)
 {
         // 重新映射 IRQ 表
         // 两片级联的 Intel 8259A 芯片
@@ -34,13 +35,13 @@ void init_pic(void)
         // 告诉从片输出引脚和主片 IR2 号相连
         outb(IO_PIC2C, 0x02);
         
-        // 设置主片和从片按照 8086 的方式工作
-        outb(IO_PIC1C, 0x01);
-        outb(IO_PIC2C, 0x01);
+        // 设置主片和从片按照 8086 的方式工作, auto EOI
+        outb(IO_PIC1C, 0x3);
+        outb(IO_PIC2C, 0x3);
         
         // 设置主从片允许中断
-        outb(IO_PIC1C, 0x0);
-        outb(IO_PIC2C, 0x0);
+        outb(IO_PIC1C, 0xFF);
+        outb(IO_PIC2C, 0xFF);
 }
 
 // 重设 8259A 芯片
@@ -148,31 +149,6 @@ static intr_func_t intr_func[INTERRUPT_MAX] = {
     [47] = &irq_15,
 };
 
-// 初始化中断
-void interrupt_init(void)
-{
-    init_pic();
-
-    idt_ptr.limit = sizeof(idt_entry_t) * INTERRUPT_MAX - 1;
-    idt_ptr.base = (u32)&idt_entries;
-
-    // 0~31:  用于 CPU 的中断处理
-    // 32~47: Intel 保留
-    u32 vec = 0;
-    for(;vec < 48; vec++)
-    {
-        idt_set_gate(vec, (addr_t)intr_func[i], DA_386IGate);
-    }
-
-    // 128 (0x80) 将来用于实现系统调用
-    idt_set_gate(INT_SYSCALL, (addr_t)intr_128, DA_386IGate | DA_DPL3);
-
-    // 更新设置中断描述符表
-    asm volatile(
-        "lidt (%0)"::"r"(&idt_ptr)
-    );
-}
-
 // 设置中断描述符
 static void idt_set_gate(u8 num, u32 base, u8 flags)
 {
@@ -230,19 +206,73 @@ void interrupt_handler(trapframe_t *regs)
     }
 }
 
-// 注册一个中断处理函数
-void register_interrupt_handler(u8 n, interrupt_handler_t h)
+static void exception_handler(trapframe_t *frame)
 {
-    interrupt_handlers[n] = h;
+	uint8_t int_no = (uint8_t)(frame->int_no);
+	switch (int_no) {
+		case INT_PAGE_FAULT:
+			__builtin_unreachable();
+			break;
+		case INT_NMI:
+			int_no = 2;
+			// fallthrough
+		default:
+			// panic(
+			// 	"%s:\n"
+			// 	"\trip: %p, rsp: %p\n"
+			// 	"\tint_no: %u, err_code: %lu",
+			// 	intrname(int_no),
+			// 	(void *)frame->rip, (void *)frame->rsp,
+			// 	int_no, (frame->err_code & 0xFFFFFFFF)
+			// );
+	}
+}
+
+// 注册一个中断处理函数
+void register_interrupt_handler(u8 vec, u8 type, interrupt_handler_t h)
+{
+    interrupt_handlers[vec] = h;
 }
 
 // IRQ 处理函数
 void irq_handler(trapframe_t *regs)
 {
-    clear_pic(regs->int_no);
+    // clear_pic(regs->int_no);
 
     if (interrupt_handlers[regs->int_no])
     {
         interrupt_handlers[regs->int_no](regs);
     }
+}
+
+void init_exceptions(void)
+{
+	for (u8 i = 0; i < 32; i++) {
+        register_interrupt_handler(i, ISR_EXCEPTION, exception_handler);
+    }
+}
+
+// 初始化中断
+void interrupt_init(void)
+{
+    pic_init();
+
+    idt_ptr.limit = sizeof(idt_entry_t) * INTERRUPT_MAX - 1;
+    idt_ptr.base = (u32)&idt_entries;
+
+    // 0~31:  用于 CPU 的中断处理
+    // 32~47: Intel 保留
+    u32 vec = 0;
+    for(;vec < 48; vec++)
+    {
+        idt_set_gate(vec, (addr_t)intr_func[vec], DA_386IGate);
+    }
+
+    // 128 (0x80) 将来用于实现系统调用
+    idt_set_gate(INT_SYSCALL, (addr_t)intr_128, DA_386IGate | DA_DPL3);
+    init_exceptions();
+    // 更新设置中断描述符表
+    asm volatile(
+        "lidt (%0)"::"r"(&idt_ptr)
+    );
 }

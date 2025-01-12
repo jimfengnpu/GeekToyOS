@@ -16,5 +16,6 @@ extern char kern_text_end[];
 extern char kern_data_start[];
 extern char kern_data_end[];
 extern char kern_end[];
+extern char start[];
 
 #endif

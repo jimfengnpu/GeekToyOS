@@ -1,7 +1,8 @@
-#include <i386/cpu.h>
+#include <cpu.h>
 #include <trap.h>
 #include <protect.h>
 #include <interrupt.h>
+#include <kernel/interrupt.h>
 
 #define IO_PIC1   (0x20)	  // Master (IRQs 0-7)
 #define IO_PIC2   (0xA0)	  // Slave  (IRQs 8-15)
@@ -9,7 +10,7 @@
 #define IO_PIC1C  (IO_PIC1+1)
 #define IO_PIC2C  (IO_PIC2+1)
 
-void init_pic(void)
+void pic_init(void)
 {
         // 重新映射 IRQ 表
         // 两片级联的 Intel 8259A 芯片
@@ -44,7 +45,7 @@ void init_pic(void)
         // x86_64 使用APIC接管中断
         outb(IO_PIC1C, 0xFF);
         outb(IO_PIC2C, 0xFF);
-        irq_disable();
+        interrupt_enable();
 }
 
 #define INTERRUPT_MAX 256
@@ -96,7 +97,7 @@ static void idt_set_gate(u8 num, addr_t base, u8 flags)
     idt_entries[num].base_mid = (base >> 16) & 0xFFFF;
     idt_entries[num].bash_hi = (base >> 32) & 0xFFFFFFFF;
 
-    idt_entries[num].sel = GD_SEL(SEG_KDATA);
+    idt_entries[num].sel = GD_SEL(SEG_KTEXT);
     idt_entries[num].ist = IST_NONE;
 
     idt_entries[num].flags = flags;
@@ -154,23 +155,23 @@ static const char *intrname(u32 intrno)
 
 static void exception_handler(trapframe_t *frame)
 {
-	uint8_t int_no = (uint8_t)(frame->int_no);
+	u8 int_no = (u8)(frame->int_no);
 	switch (int_no) {
 		case INT_PAGE_FAULT:
 			__builtin_unreachable();
 			break;
-		case IRQ_NMI:
-			int_no = 2;
+		// case IRQ_NMI:
+		// 	int_no = 2;
 			// fallthrough
 		default:
-			// panic(
-			// 	"%s:\n"
-			// 	"\trip: %p, rsp: %p\n"
-			// 	"\tint_no: %u, err_code: %lu",
-			// 	intrname(int_no),
-			// 	(void *)frame->rip, (void *)frame->rsp,
-			// 	int_no, (frame->err_code & 0xFFFFFFFF)
-			// );
+			panic(
+				"%s:\n"
+				"\trip: %p, rsp: %p\n"
+				"\tint_no: %u, err_code: %lu",
+				intrname(int_no),
+				(void *)frame->rip, (void *)frame->rsp,
+				int_no, (frame->err_code & 0xFFFFFFFF)
+			);
 	}
 }
 // 注册一个中断处理函数
@@ -182,16 +183,16 @@ void register_interrupt_handler(u8 vec, u8 type, interrupt_handler_t h)
 
 void init_exceptions(void)
 {
-	for (uint8_t i = 0; i < 32; i++) {
+	for (u8 i = 0; i < 32; i++) {
         register_interrupt_handler(i, ISR_EXCEPTION, exception_handler);
     }
 
-	register_interrupt_handler(IRQ_NMI, ISR_EXCEPTION, exception_handler);
+	// register_interrupt_handler(IRQ_NMI, ISR_EXCEPTION, exception_handler);
 }
 
 void interrupt_init(void)
 {
-    init_pic();
+    pic_init();
     init_idt();
     init_exceptions();
     // 更新设置中断描述符表
@@ -203,13 +204,15 @@ void interrupt_init(void)
 // 调用中断处理函数
 void interrupt_handler(trapframe_t *frame)
 {
-    if (interrupt_handlers[frame->int_no].handler)
+    struct isr_info* info = &interrupt_handlers[frame->int_no];
+    if (info->handler)
     {
-        interrupt_handlers[frame->int_no].handler(frame);
+        info->handler(frame);
     }
-    else
-    {
-        halt();  
-    }
+    
 }
 
+static void pic_disable_irq()
+{
+
+}

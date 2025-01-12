@@ -65,19 +65,36 @@ start:
         or      $(PDE_ATTR_P | PDE_ATTR_RW), %eax
         mov     %eax, pud
 
-        mov     $pagetable, %eax
+        mov     $pud, %ebx
+        mov     $pmd, %eax
+        add     $(PAGE_SIZE), %eax
         or      $(PDE_ATTR_P | PDE_ATTR_RW), %eax
-        mov     %eax, pmd
+        mov     %eax, 8(%ebx)
+
+        mov     $pmd, %eax
+        add     $(2*PAGE_SIZE), %eax
+        or      $(PDE_ATTR_P | PDE_ATTR_RW), %eax
+        mov     %eax, 16(%ebx)
+
+        mov     $pmd, %eax
+        add     $(3*PAGE_SIZE), %eax
+        or      $(PDE_ATTR_P | PDE_ATTR_RW), %eax
+        mov     %eax, 24(%ebx)
+
+        //mov     $pagetable, %eax
+        //or      $(PDE_ATTR_P | PDE_ATTR_RW), %eax
+        //mov     %eax, pmd
 
         xor     %ecx, %ecx
-        movl    $pagetable, %ebx
+        //movl    $pagetable, %ebx
+        movl    $pmd, %ebx
 .loop_makepage:
         movl    %ecx, %eax
-        sal     $12, %eax
-        or      $(PDE_ATTR_P | PDE_ATTR_RW ), %eax
+        sal     $21, %eax
+        or      $(PDE_ATTR_P | PDE_ATTR_RW | PDE_ATTR_PS), %eax
         movl    %eax, (%ebx,%ecx,8)
         inc     %ecx
-        cmp     $1024, %ecx
+        cmp     $2048, %ecx
         jl      .loop_makepage
 
         # load page table
@@ -96,11 +113,11 @@ start:
         mov     %cr0, %eax
         or      $CR0_PG, %eax
         mov     %eax, %cr0
-        #jmp .loop
+        
         # set up GDT
         mov     $gdt64_ptr, %eax
         lgdt    (%eax)
-        #jmp     .loop
+
         # enter long mode by enabling EFER.LME
         # reload all the segment registers
         mov $(2 << SELECTOR_INDEX), %ax
@@ -111,9 +128,7 @@ start:
         mov     %ax, %gs
 
         
-        # enter the 64-bit world within a long jmp
-        #pushl   $(1 << SELECTOR_INDEX)
-        #pushl   
+        # enter the 64-bit world within a long jmp 
         ljmp    $0x08, $.long_mode
 
         # we shouldn't get here...
@@ -164,6 +179,6 @@ pgd:
 pud:
         .space  PAGE_SIZE
 pmd:
-        .space  PAGE_SIZE
-pagetable:
-        .space  PAGE_SIZE * 2
+        .space  PAGE_SIZE * 4
+//pagetable:
+//        .space  PAGE_SIZE * 2

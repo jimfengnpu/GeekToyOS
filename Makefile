@@ -3,8 +3,8 @@ include $(PROJECT_DIR)/conf.mk
 
 INS_DEV=$(shell sudo losetup -f)
 
-KERNEL_SRC=$(foreach dir, $(KERNEL_SRC_DIRS), $(wildcard $(dir)/*.[cS]))
-KERNEL_OBJS=$(addprefix $(OBJDIR)/,$(patsubst %.c, %.o,$(patsubst %.S, %.o, $(KERNEL_SRC))))
+KERNEL_SRC=$(foreach dir, $(KERNEL_SRC_DIRS), $(wildcard $(dir)/*.[cS])) 
+KERNEL_OBJS=$(addprefix $(OBJDIR)/,$(patsubst %.c, %.o,$(patsubst %.S, %.o, $(KERNEL_SRC)))) $(OBJDIR)/$(PROJECT_DIR)/font.o
 LIB_SRC=$(wildcard $(LIB_SRC_DIR)/*.c)
 LIB_OBJS=$(addprefix $(OBJDIR)/, $(patsubst %.c, %.o, $(LIB_SRC)))
 
@@ -32,7 +32,7 @@ run:
 	$(QEMU) -hda $(IMG_FILE) $(QEMU_OPT) -serial file:kernel.log  -device VGA -monitor stdio 
 
 gdb: $(IMG_FILE)
-	$(QEMU) -hda $(IMG_FILE) $(QEMU_OPT) -serial file:kernel.log  -device VGA -monitor stdio  -gdb tcp::1234 -S
+	$(QEMU) -hda $(IMG_FILE) $(QEMU_OPT) -serial file:kernel.log  -device VGA -monitor stdio -d cpu_reset -D qemu.log -gdb tcp::1234 -S
 
 dump_kernel:
 	objdump -D $(KERNEL_FILE) > $(OBJDIR)/kernel.txt
@@ -62,7 +62,8 @@ $(OBJDIR)/%.o: %.c $(OBJDIR)/.vars.CFLAGS
 
 $(OBJDIR)/%.o: %.psf
 	@mkdir -p $(@D)
-	objcopy -O elf32-i386 -B i386 -I binary $< $@
+	cp $< $(@D)
+	cd $(@D); objcopy $(OBJCOPYFLAGS) -I binary $(notdir $<) $(notdir $@)
 
 $(OBJDIR)/%.ld: %.ld
 	@mkdir -p $(@D)

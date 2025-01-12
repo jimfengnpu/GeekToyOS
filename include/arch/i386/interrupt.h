@@ -37,9 +37,6 @@ typedef struct Trapframe
     u16 padding3;
 } trapframe_t;
 
-// 定义中断处理函数指针
-typedef void (*interrupt_handler_t)(trapframe_t *);
-
 // 中断号定义
 #define INT_DIVIDE_ERROR 0
 #define INT_DEBUG 1
@@ -84,7 +81,4 @@ typedef void (*interrupt_handler_t)(trapframe_t *);
 // 初始化中断
 void interrupt_init(void);
 
-
-// 注册一个中断处理函数
-void register_interrupt_handler(u8 n, interrupt_handler_t h);
 #endif
