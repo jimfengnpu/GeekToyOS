@@ -1,6 +1,7 @@
 #include <lib/string.h>
 #include <drivers/video.h>
 #include <kernel/multiboot2.h>
+#include <kernel/mm.h>
 
 extern char* _binary_font_psf_end;
 extern char* _binary_font_psf_start;
@@ -87,7 +88,6 @@ void screen_init()
     screen_info.height = tag->common.framebuffer_height;
     screen_info.width = tag->common.framebuffer_width;
     screen_info.pitch = tag->common.framebuffer_pitch;
-    klog("screen init, fb=0x%x\n", screen_info.base);
     switch (tag->common.framebuffer_type)
     {
     case MULTIBOOT_FRAMEBUFFER_TYPE_RGB:
@@ -128,12 +128,12 @@ void screen_init()
 }
 
 
-static void screen_put_pixel(u32 x, u32 y, u32 pixel)
+static void screen_put_pixel(size_t x, size_t y, u32 pixel)
 {
     if(x >= screen_info.width || y >= screen_info.height){
         return;
     }
-    u32 psize = screen_info.bpp;
+    size_t psize = screen_info.bpp;
     addr_t pptr = screen_info.base + y*screen_info.pitch + x*psize;
     switch (psize)
     {

@@ -5,26 +5,18 @@
 
 typedef addr_t pte_t;
 typedef addr_t pde_t;
-
+typedef addr_t pgd_t;
 // A linear address 'la' in x86-64 has a  structure as follows:
 //
-// +---4-----+--------9-------+-------9--------+-------9--------+-------9--------+---------12----------+
-// |sign ext |     P G D      |   P  U   D     |    P  M  D     |  Page Table    | Offset within Page  |
+// +---16----+--------9-------+-------9--------+-------9--------+-------9--------+---------12----------+
+// |sign ext |     P G D      |   P  U   D     |    Page Dir    |  Page Table    | Offset within Page  |
 // +---------+----------------+----------------+----------------+----------------+---------------------+
 //            \--- PGX(la) --/ \--- PUX(la) --/ \--- PDX(la) --/ \--- PTX(la) --/ \---- PGOFF(la) ----/
 //
 
-#define DEFINE_PD_INDEXER(part) \
-static inline addr_t P##part##X(addr_t la){   \
-    return ((la) >> P##part##XSHIFT) & 0x1FF;\
-}
-DEFINE_PD_INDEXER(G)
-DEFINE_PD_INDEXER(U)
-DEFINE_PD_INDEXER(D)
-DEFINE_PD_INDEXER(T)
-
 // offset in page
 #define PGOFF(la)	(((addr_t) (la)) & 0xFFF)
+#define PTADDR(pde) ((addr_t)(pde) & (~0xFFF))
 
 // construct linear address from indexes and offset
 // #define PGADDR(d, t, o)	((void*) ((d) << PDXSHIFT | (t) << PTXSHIFT | (o)))
@@ -43,6 +35,15 @@ DEFINE_PD_INDEXER(T)
 #define PDXSHIFT	21		// offset of PDX in a linear address
 #define PUXSHIFT	30		// offset of PUX in a linear address
 #define PGXSHIFT	39		// offset of PUX in a linear address
+
+#define DEFINE_PD_INDEXER(part) \
+static inline addr_t P##part##X(addr_t la){   \
+    return ((la) >> P##part##XSHIFT) & 0x1FF;\
+}
+DEFINE_PD_INDEXER(G)
+DEFINE_PD_INDEXER(U)
+DEFINE_PD_INDEXER(D)
+DEFINE_PD_INDEXER(T)
 
 // Page table/directory entry flags.
 #define PTE_P		0x001	// Present

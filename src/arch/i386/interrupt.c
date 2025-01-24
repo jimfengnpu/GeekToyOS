@@ -84,8 +84,6 @@ static idt_entry_t idt_entries[INTERRUPT_MAX] __attribute__((aligned(16)));
 // IDTR
 static idt_ptr_t idt_ptr;
 
-// 中断处理函数的指针数组
-static interrupt_handler_t interrupt_handlers[INTERRUPT_MAX] __attribute__((aligned(4)));
 
 // 设置中断描述符
 static void idt_set_gate(u8 num, u32 base, u8 flags);
@@ -196,9 +194,9 @@ static const char *intrname(u32 intrno)
 // 调用中断处理函数
 void interrupt_handler(trapframe_t *regs)
 {
-    if (interrupt_handlers[regs->int_no])
+    if (interrupt_handlers[regs->int_no].handler)
     {
-        interrupt_handlers[regs->int_no](regs);
+        interrupt_handlers[regs->int_no].handler(regs);
     }
     else
     {
@@ -226,23 +224,6 @@ static void exception_handler(trapframe_t *frame)
 			// 	int_no, (frame->err_code & 0xFFFFFFFF)
 			// );
 	}
-}
-
-// 注册一个中断处理函数
-void register_interrupt_handler(u8 vec, u8 type, interrupt_handler_t h)
-{
-    interrupt_handlers[vec] = h;
-}
-
-// IRQ 处理函数
-void irq_handler(trapframe_t *regs)
-{
-    // clear_pic(regs->int_no);
-
-    if (interrupt_handlers[regs->int_no])
-    {
-        interrupt_handlers[regs->int_no](regs);
-    }
 }
 
 void init_exceptions(void)
@@ -275,4 +256,14 @@ void interrupt_init(void)
     asm volatile(
         "lidt (%0)"::"r"(&idt_ptr)
     );
+}
+
+void enable_irq(u8 irq)
+{
+
+}
+
+void disable_irq(u8 irq)
+{
+
 }

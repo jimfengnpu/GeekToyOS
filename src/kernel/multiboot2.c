@@ -2,20 +2,28 @@
 #include <kernel/kernel.h>
 
 struct multiboot_tag* mboot_info;
+char *mboot_info_end;
 
-void mboot_info_list()
+void mboot_info_init()
+{
+    addr_t addr = mboot_info;
+    u32 size = *((unsigned *) addr);
+    mboot_info_end = addr + size;
+}
+
+void mboot_info_show()
 {
     struct multiboot_tag *tag;
     u32 size;
     addr_t addr = mboot_info;
     size = *((unsigned *) addr);
-    klog("Announced mbi addr: 0x%x, size 0x%x\n", addr, size);
+    klog("Announced mbi addr: 0x%lx, size 0x%x\n", addr, size);
     for (tag = (struct multiboot_tag *) (addr + 8);
        tag->type != MULTIBOOT_TAG_TYPE_END;
        tag = (struct multiboot_tag *) ((multiboot_uint8_t *) tag 
                                        + ((tag->size + 7) & ~7)))
     {
-        klog("Tag 0x%x, Size 0x%x\n", tag->type, tag->size);
+        // klog("Tag 0x%x, Size 0x%x\n", tag->type, tag->size);
         switch (tag->type)
             {
             case MULTIBOOT_TAG_TYPE_CMDLINE:
@@ -71,7 +79,6 @@ void mboot_info_list()
                 struct multiboot_tag_framebuffer *tagfb
                 = (struct multiboot_tag_framebuffer *) tag;
                 void *fb = (void *) (unsigned long) kaddr(tagfb->common.framebuffer_addr);
-                klog("fb: 0x%x\n", fb);
                 switch (tagfb->common.framebuffer_type)
                 {
                 case MULTIBOOT_FRAMEBUFFER_TYPE_INDEXED:
@@ -162,7 +169,7 @@ void mboot_info_list()
 
 struct multiboot_tag * mboot_get_mboot_info(u32 type)
 {
-    addr_t addr = kaddr(mboot_info);
+    addr_t addr = mboot_info;
     struct multiboot_tag *tag;
     for (tag = (struct multiboot_tag *) (addr + 8);
        tag->type != MULTIBOOT_TAG_TYPE_END;

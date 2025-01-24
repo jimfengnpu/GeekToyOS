@@ -17,12 +17,14 @@ INSTALL_MODE=virtual
 IMG_SIZE=512
 IMG_FILE=$(OS_NAME).img
 ISO_FILE=$(OS_NAME).iso
+DEBUG_MODE=1
 
 # basic dir and file
 INC_DIRS=include/ include/arch/$(ARCH)/ include/arch/
-KERNEL_SRC_DIRS=arch/$(ARCH) kernel drivers fs
-LIB_SRC_DIR=lib
 OBJDIR=obj
+SRCDIR=src
+KERNEL_SRC_DIRS=arch/$(ARCH) kernel kernel/* drivers fs
+LIB_SRC_DIR=lib
 KERNEL_FILE=$(OBJDIR)/kernel.bin
 LIB_FILE=$(OBJDIR)/libc.a
 
@@ -32,7 +34,7 @@ LD=ld
 ASM=as
 AR=ar
 PERL=perl
-CFLAGS= -c -mno-sse -mno-mmx -mno-red-zone -fno-stack-protector -ffreestanding -fno-pic -Wall -Wextra -std=gnu99 $(addprefix -I,$(INC_DIRS)) -g -lgcc
+CFLAGS= -c -mno-sse -mno-mmx -mno-red-zone -fno-stack-protector -ffreestanding -fno-pic -Wall -Wextra -std=gnu99 $(addprefix -I,$(INC_DIRS)) -lgcc
 CFLAGS+= -DARCH=$(ARCH)
 LDFLAGS = -nostdlib -z noexecstack -T $(OBJDIR)/$(PROJECT_DIR)/kernel.ld 
 ASMFLAGS = $(addprefix -I,$(INC_DIRS))
@@ -47,6 +49,10 @@ else
 CFLAGS += -DARCH_64BIT -mcmodel=large
 ASMFLAGS += --64
 OBJCOPYFLAGS += -O elf64-x86-64
+endif
+
+ifeq ($(DEBUG_MODE),1)
+CFLAGS += -g
 endif
 
 ifeq ($(BOOT_TYPE),efi)
@@ -79,4 +85,10 @@ GRUB_PART=2
 ifeq ($(BOOT_TYPE),efi)
 ROOT_PART=2
 GRUB_PART=3
+endif
+
+ifneq ($(wildcard /usr/share/grub2/*),)
+GRUB_DATA=/usr/share/grub2/$(GRUB_TARGET)
+else ifneq ($(wildcard /usr/lib/grub/*),)
+GRUB_DATA=/usr/lib/grub/$(GRUB_TARGET)
 endif

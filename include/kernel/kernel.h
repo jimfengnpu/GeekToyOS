@@ -8,10 +8,8 @@
 #include <kernel/section.h>
 #include <kernel/console.h>
 
-#define kaddr(addr) (((addr_t) (addr) <= KERN_BASE)? \
-    ((addr_t)(addr) + KERN_BASE) : (addr_t) (addr))
-#define paddr(addr) (((addr_t) (addr) >= KERN_BASE)? \
-    ((addr_t)(addr) - KERN_BASE) : (addr_t) (addr))
+#define kaddr(addr) ((addr_t) ((addr_t)(addr) + KERN_BASE))
+#define paddr(addr) ((addr_t) ((addr_t)(addr) - KERN_BASE))
 
 #define as_kaddr(x) ((typeof(x)) kaddr(x))
 #define as_paddr(x) ((typeof(x)) paddr(x))

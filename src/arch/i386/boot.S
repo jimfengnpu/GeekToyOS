@@ -3,6 +3,37 @@
 #define MULTIBOOT2_BOOTLOADER_MAGIC             0x36d76289
 #include <mem_layout.h>
 /*  The flags for the Multiboot header. */
+#define GRUB_MULTIBOOT_ARCHITECTURE_I386 (0)
+#define MULTIBOOT2_HEADER_LEN (multiboot_header_end - multiboot_header)
+#define MULTIBOOT2_HEADER_CHECKSUM \
+    -(MULTIBOOT2_HEADER_MAGIC \
+    + GRUB_MULTIBOOT_ARCHITECTURE_I386 \
+    + MULTIBOOT2_HEADER_LEN)
+#define MULTIBOOT2_HEADER_MAGIC                 0xe85250d6
+#define MULTIBOOT_HEADER_TAG_ENTRY_ADDRESS  3
+# #define MULTIBOOT_HEADER_TAG_FRAMEBUFFER  5
+#define MULTIBOOT_HEADER_TAG_END  0
+
+.section  .multiboot
+        .align 8
+multiboot_header:
+        .long   MULTIBOOT2_HEADER_MAGIC
+        .long   GRUB_MULTIBOOT_ARCHITECTURE_I386
+        .long   MULTIBOOT2_HEADER_LEN
+        .long   MULTIBOOT2_HEADER_CHECKSUM
+tag_entry:
+        .align 8
+        .short MULTIBOOT_HEADER_TAG_ENTRY_ADDRESS
+        .short 0
+        .long 12
+        .long start
+
+tags_end:
+        .align 8
+        .short  MULTIBOOT_HEADER_TAG_END
+        .short  0
+        .long   8
+multiboot_header_end:
         .section ".init.text"
 
         .globl  start

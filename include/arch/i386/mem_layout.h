@@ -8,9 +8,7 @@
 /*
 0xF000_0000 ---- 0xFFFF_FFFF KMAPPING
 0xC000_0000 ---- 0xEFFF_FFFF Kernel Linear Mapping
-            ----        | User Address
-            ----        |
-0x0000_0000 ---- 0x0040_0000 Low Mem Direct
+0x0000_0000 ---- 0xBFFF_FFFF User Address
 
 */
 #endif

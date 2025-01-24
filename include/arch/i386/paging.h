@@ -3,8 +3,9 @@
 #include <lib/types.h>
 
 
-typedef u32 pte_t;
-typedef u32 pde_t;
+typedef addr_t pte_t;
+typedef addr_t pde_t;
+typedef pde_t pgd_t;
 
 // A linear address 'la' has a three-part structure as follows:
 //
@@ -83,4 +84,5 @@ typedef u32 pde_t;
 #define FEC_PR		0x1	// Page fault caused by protection violation
 #define FEC_WR		0x2	// Page fault caused by a write
 #define FEC_U		0x4	// Page fault occured while in user mode
+
 #endif

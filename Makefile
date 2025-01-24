@@ -3,10 +3,11 @@ include $(PROJECT_DIR)/conf.mk
 
 INS_DEV=$(shell sudo losetup -f)
 
-KERNEL_SRC=$(foreach dir, $(KERNEL_SRC_DIRS), $(wildcard $(dir)/*.[cS])) 
-KERNEL_OBJS=$(addprefix $(OBJDIR)/,$(patsubst %.c, %.o,$(patsubst %.S, %.o, $(KERNEL_SRC)))) $(OBJDIR)/$(PROJECT_DIR)/font.o
-LIB_SRC=$(wildcard $(LIB_SRC_DIR)/*.c)
-LIB_OBJS=$(addprefix $(OBJDIR)/, $(patsubst %.c, %.o, $(LIB_SRC)))
+KERNEL_SRC=$(foreach dir, $(KERNEL_SRC_DIRS), $(wildcard $(SRCDIR)/$(dir)/*.[cS])) 
+KERNEL_OBJS=$(subst $(SRCDIR)/, $(OBJDIR)/, $(patsubst %.c, %.o,$(patsubst %.S, %.o, $(KERNEL_SRC)))) $(OBJDIR)/$(PROJECT_DIR)/font.o
+LIB_SRC=$(wildcard $(SRCDIR)/$(LIB_SRC_DIR)/*.c)
+LIB_OBJS=$(subst $(SRCDIR)/, $(OBJDIR)/, $(patsubst %.c, %.o, $(LIB_SRC)))
+
 
 OBJDIRS= $(KERNEL_SRC_DIRS) $(LIB_SRC_DIR)
 all: prepare $(KERNEL_FILE)
@@ -27,9 +28,10 @@ install: $(KERNEL_FILE) $(IMG_FILE)
 		sudo losetup -d $(INS_DEV); 	\
 	fi
 
+iso: $(ISO_FILE)
 
 run:
-	$(QEMU) -hda $(IMG_FILE) $(QEMU_OPT) -serial file:kernel.log  -device VGA -monitor stdio 
+	$(QEMU) -cdrom $(ISO_FILE) $(QEMU_OPT) -serial file:kernel.log  -device VGA -monitor stdio
 
 gdb: $(IMG_FILE)
 	$(QEMU) -hda $(IMG_FILE) $(QEMU_OPT) -serial file:kernel.log  -device VGA -monitor stdio -d cpu_reset -D qemu.log -gdb tcp::1234 -S
@@ -44,6 +46,13 @@ $(IMG_FILE): $(PARTITION_CONF) $(PROJECT_DIR)/conf.mk
 	dd if=/dev/zero of=$@ bs=1048576 count=$(IMG_SIZE)
 	$(MK_DISK) $@ < $(PARTITION_CONF)
 
+$(ISO_FILE): $(KERNEL_FILE) $(PARTITION_CONF) $(PROJECT_DIR)/conf.mk
+	mkdir -p mnt/boot
+	mkdir -p mnt/boot/grub
+	cp ${KERNEL_FILE} mnt/boot/kernel.bin
+	cp $(PROJECT_DIR)/grub_iso.cfg mnt/boot/grub/grub.cfg
+	grub-mkrescue $(GRUB_DATA) -o $(ISO_FILE) mnt
+	rm -r mnt/*
 
 $(LIB_FILE): $(LIB_OBJS)
 	$(AR) r -o $@ $^
@@ -51,12 +60,12 @@ $(LIB_FILE): $(LIB_OBJS)
 $(KERNEL_FILE): $(KERNEL_OBJS) $(LIB_FILE) $(OBJDIR)/$(PROJECT_DIR)/kernel.ld $(OBJDIR)/.vars.LDFLAGS
 	$(LD) $(LDFLAGS) -o $@ $(KERNEL_OBJS) $(LIB_FILE)
 
-$(OBJDIR)/%.o: %.S $(OBJDIR)/.vars.ASMFLAGS
+$(OBJDIR)/%.o: $(SRCDIR)/%.S $(OBJDIR)/.vars.ASMFLAGS
 	@mkdir -p $(@D)
 	$(CC) $(CFLAGS) -o $@ $<
 # $(ASM) $(ASMFLAGS) -o $@ $< -vv
 
-$(OBJDIR)/%.o: %.c $(OBJDIR)/.vars.CFLAGS
+$(OBJDIR)/%.o: $(SRCDIR)/%.c $(OBJDIR)/.vars.CFLAGS
 	@mkdir -p $(@D)
 	$(CC) $(CFLAGS) -o $@ $<
 

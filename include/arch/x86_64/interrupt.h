@@ -23,7 +23,7 @@ typedef struct Trapframe
     u64 ss;
 } trapframe_t;
 
-
+#define INTERRUPT_MAX 256
 // 中断号定义
 #define INT_DIVIDE_ERROR 0
 #define INT_DEBUG 1

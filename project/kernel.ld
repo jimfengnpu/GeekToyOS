@@ -14,37 +14,32 @@ SECTIONS
                 PROVIDE(multiboot_header_end = .);
                 *(.init.text)
         }
-        . += KERN_BASE;
-        .text : AT(ADDR(.text) - KERN_BASE)
-        {
-                *(.text)
-        }
-
-        . -= KERN_BASE;
-        PROVIDE(kern_text_end = .);
         . = ALIGN(0x1000);
         PROVIDE(kern_data_start = .);
         .init.data :
         {
                 *(.init.data)
         }
-
+        . = ALIGN(0x1000);
         . += KERN_BASE;
-
+        .text : AT(ADDR(.text) - KERN_BASE)
+        {
+                *(.text)
+                PROVIDE(kern_text_end = . - KERN_BASE);
+                *(.rodata)
+        }
+        . = ALIGN(0x1000);
         .data : AT(ADDR(.data) - KERN_BASE)
         {
                 *(.data)
-                *(.rodata)
+                PROVIDE(kern_data_end = . - KERN_BASE);
         }
-        . -= KERN_BASE;
-        PROVIDE(kern_data_end = .);
+        
         . = ALIGN(0x1000);
-        .init.bss :
+        .init.bss . - KERN_BASE:
         {
                 *(.init.bss)
         }
-        . += KERN_BASE;
-
         .bss : AT(ADDR(.bss) - KERN_BASE)
         {
                 *(.bss)

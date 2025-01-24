@@ -2,5 +2,14 @@
 #define MEM_LAYOUT_H
 
 #define KERN_BASE   0xFFFF800000000000
+#define USER_START  0x0
+#define USER_END    0x0000800000000000
+/*
+0xFFFF_8000_0000_0000 --- 0x.... Kernel Direct Mapping
 
+0x0000_8000_0000_0000 --- 0xFFFF_7FFF_FFFF_FFFF invalid addr hole
+
+0x0000_0000_0000_0000 --- 0x0000_7FFF_FFFF_FFFF User Space
+
+ */
 #endif

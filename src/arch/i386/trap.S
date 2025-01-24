@@ -110,7 +110,6 @@ irq  15,    47 	// IDE1 传输控制使用
 
 .globl irq_common
 .globl forkret_s
-.extern irq_handler
 irq_common:
 	pusha                    // pushes edi, esi, ebp, esp, ebx, edx, ecx, eax
 	
@@ -125,7 +124,7 @@ irq_common:
 	mov %ax, %ss
 	
 	pushl %esp
-	call irq_handler
+	call interrupt_handler
 	add $4, %esp
 
 forkret_s:

@@ -46,7 +46,7 @@ void clock_init(){
 	outb(TIMER0, (u8)(TIMER_FREQ / HZ));
 	outb(TIMER0, (u8)((TIMER_FREQ / HZ) >> 8));
 	/* initialize clock-irq */
-    register_interrupt_handler(CLOCK_IRQ, ISR_IRQ, clock_handler);
+    // register_interrupt_handler(CLOCK_IRQ, ISR_IRQ, clock_handler);
 	// put_irq_handler(CLOCK_IRQ, clock_handler); /* 设定时钟中断处理程序 */
 	current_timestamp = get_init_rtc_timestamp();
 	// irq_enable();					   /* 让8259A可以接收时钟中断 */

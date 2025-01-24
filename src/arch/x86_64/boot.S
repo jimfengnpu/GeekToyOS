@@ -20,12 +20,68 @@
 #define MULTIBOOT2_BOOTLOADER_MAGIC             0x36d76289
 #include <mem_layout.h>
 /*  The flags for the Multiboot header. */
+#define GRUB_MULTIBOOT_ARCHITECTURE_I386 (0)
+#define MULTIBOOT2_HEADER_LEN (multiboot_header_end - multiboot_header)
+#define MULTIBOOT2_HEADER_CHECKSUM \
+    -(MULTIBOOT2_HEADER_MAGIC \
+    + GRUB_MULTIBOOT_ARCHITECTURE_I386 \
+    + MULTIBOOT2_HEADER_LEN)
+#define MULTIBOOT2_HEADER_MAGIC                 0xe85250d6
+#define MULTIBOOT_HEADER_TAG_ADDRESS    2
+#define MULTIBOOT_HEADER_TAG_ENTRY_ADDRESS  3
+#define MULTIBOOT_HEADER_TAG_FRAMEBUFFER  5
+#define MULTIBOOT_HEADER_TAG_END  0
+
+.section  .multiboot
+.extern multiboot_header_start
+.extern kern_start
+.extern kern_data_end
+.extern kern_end
+        .align 8
+multiboot_header:
+        .long   MULTIBOOT2_HEADER_MAGIC
+        .long   GRUB_MULTIBOOT_ARCHITECTURE_I386
+        .long   MULTIBOOT2_HEADER_LEN
+        .long   MULTIBOOT2_HEADER_CHECKSUM
+tag_entry:
+        .align 8
+        .short MULTIBOOT_HEADER_TAG_ENTRY_ADDRESS
+        .short 0
+        .long 12
+        .long start
+tag_addr:
+        .align 8
+        .short MULTIBOOT_HEADER_TAG_ADDRESS
+        .short 0
+        .long  24
+        .long  multiboot_header_start
+        .long  kern_start
+        .long  kern_data_end
+        .long  kern_end   
+
+tag_frame_buffer:
+        .align 8
+        .short MULTIBOOT_HEADER_TAG_FRAMEBUFFER
+        .short 0
+        .long 20
+        .long 1080
+        .long 768
+        .long 32
+
+tags_end:
+        .align 8
+        .short  MULTIBOOT_HEADER_TAG_END
+        .short  0
+        .long   8
+multiboot_header_end:
         .section ".init.text"
 
         .globl  start
-        .globl  ist_stack1, ist_stack2
-start:
+        .globl  ist_stack1, ist_stack2, pgd, pud
         .code32
+        .align 0x1000
+start:
+        cli
         # check for multiboot2 header
         cmp $MULTIBOOT2_BOOTLOADER_MAGIC, %eax
         jne .loop
@@ -36,11 +92,11 @@ start:
         mov     %eax, %edi
         mov     %ebx, %esi
 
-        movl    $0x80000001, %eax
-        cpuid
-        andl    $0x20000000, %edx
-        cmp     $0, %edx
-        je      .loop # no long mode support
+        # movl    $0x80000001, %eax
+        # cpuid
+        # andl    $0x20000000, %edx
+        # cmp     $0, %edx
+        # je      .loop # no long mode support
 
         # clear eflags
         pushl   $0
@@ -51,6 +107,7 @@ start:
         not     %ebx
         and     %ebx, %eax
         mov     %eax, %cr0
+        
 
         # set up page table for booting stage
         # it's okay to write only 32bit here :)
@@ -61,16 +118,21 @@ start:
         movl    $pgd, %ebx     
         mov     %eax, (%ebx, %ecx, 8)
 
-        mov     $pmd, %eax
-        or      $(PDE_ATTR_P | PDE_ATTR_RW), %eax
+        # mov     $pmd, %eax
+        xor     %eax, %eax
+        or      $(PDE_ATTR_P | PDE_ATTR_RW | PDE_ATTR_PS), %eax
         mov     %eax, pud
 
-        mov     $pud, %ebx
+        xor     %eax, %eax
+        mov     %eax, (pgd + 4)
+        mov     %eax, (pud + 4)
+        
+        /*mov     $pud, %ebx
         mov     $pmd, %eax
         add     $(PAGE_SIZE), %eax
         or      $(PDE_ATTR_P | PDE_ATTR_RW), %eax
-        mov     %eax, 8(%ebx)
-
+        mov     %eax, 8(%ebx)*/
+        /*
         mov     $pmd, %eax
         add     $(2*PAGE_SIZE), %eax
         or      $(PDE_ATTR_P | PDE_ATTR_RW), %eax
@@ -80,29 +142,36 @@ start:
         add     $(3*PAGE_SIZE), %eax
         or      $(PDE_ATTR_P | PDE_ATTR_RW), %eax
         mov     %eax, 24(%ebx)
+        */
+        /*
+        mov     $pagetable, %eax
+        or      $(PDE_ATTR_P | PDE_ATTR_RW), %eax
+        mov     %eax, pmd
 
-        //mov     $pagetable, %eax
-        //or      $(PDE_ATTR_P | PDE_ATTR_RW), %eax
-        //mov     %eax, pmd
-
+        mov     $pmd, %ebx
+        mov     $pagetable, %eax
+        add     $(PAGE_SIZE), %eax
+        or      $(PDE_ATTR_P | PDE_ATTR_RW), %eax
+        mov     %eax, 8(%ebx)
+        
         xor     %ecx, %ecx
-        //movl    $pagetable, %ebx
-        movl    $pmd, %ebx
+        movl    $pagetable, %ebx
+        //movl    $pmd, %ebx
 .loop_makepage:
         movl    %ecx, %eax
-        sal     $21, %eax
-        or      $(PDE_ATTR_P | PDE_ATTR_RW | PDE_ATTR_PS), %eax
+        sal     $12, %eax
+        or      $(PDE_ATTR_P | PDE_ATTR_RW), %eax
         movl    %eax, (%ebx,%ecx,8)
         inc     %ecx
-        cmp     $2048, %ecx
+        cmp     $1024, %ecx
         jl      .loop_makepage
-
+        */
         # load page table
         mov     $pgd, %eax
         mov     %eax, %cr3
 
         mov     %cr4, %eax
-        or      $(CR4_PAE), %eax
+        or      $(CR4_PAE | CR4_PGE), %eax
         mov     %eax, %cr4
 
         mov     $0xC0000080, %ecx
@@ -129,7 +198,7 @@ start:
 
         
         # enter the 64-bit world within a long jmp 
-        ljmp    $0x08, $.long_mode
+        ljmp  $(1 << SELECTOR_INDEX), $.long_mode
 
         # we shouldn't get here...
         
@@ -139,9 +208,8 @@ start:
 .long_mode:
         mov     $(KERN_BASE), %rax
         addq  %rax, %rsp
-        addq  %rax, %rbp
-        call boot_main
-        .align 0x1000
+        jmp boot_main
+        .align 0x10
         # global segment descriptor table
         .globl gdt64, gdt64_ptr
 gdt64:
@@ -178,7 +246,7 @@ pgd:
         .space  PAGE_SIZE
 pud:
         .space  PAGE_SIZE
-pmd:
-        .space  PAGE_SIZE * 4
+//pmd:
+//        .space  PAGE_SIZE
 //pagetable:
-//        .space  PAGE_SIZE * 2
+//        .space  PAGE_SIZE

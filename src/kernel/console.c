@@ -9,6 +9,7 @@ console_t console;
 void kputchar(int ch)
 {
     serial_write_com(1, ch);
+    cputchar(ch);
 }
 
 
@@ -42,13 +43,15 @@ void console_init()
 {
     serial_init();
     screen_init();
+    // halt();
     console.x = 0;
     console.y = 0;
     console.xlimit = screen_info.width/screen_info.font_width;
     console.ylimit = screen_info.height/screen_info.font_height;
-    klog("console:%dx%d\n", console.xlimit, console.ylimit);
     console.xstep = screen_info.font_width;
     console.ystep = screen_info.font_height;
+    klog("screen: %dx%d, fb=0x%lx\n", screen_info.width, screen_info.height, screen_info.base);
+    klog("console:%dx%d\n", console.xlimit, console.ylimit);
 }
 
 static void cputch(int ch, int *count)

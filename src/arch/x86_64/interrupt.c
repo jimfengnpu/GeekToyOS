@@ -48,8 +48,6 @@ void pic_init(void)
         interrupt_enable();
 }
 
-#define INTERRUPT_MAX 256
-
 // 中断描述符
 typedef
 struct idt_entry_t {
@@ -75,9 +73,6 @@ static idt_entry_t idt_entries[INTERRUPT_MAX] __attribute__((aligned(16)));
 
 // IDTR
 static idt_ptr_t idt_ptr;
-
-// 中断处理函数的指针数组
-static isr_info interrupt_handlers[INTERRUPT_MAX];
 
 // 设置中断描述符
 static void idt_set_gate(u8 num, addr_t base, u8 flags);
@@ -174,12 +169,7 @@ static void exception_handler(trapframe_t *frame)
 			);
 	}
 }
-// 注册一个中断处理函数
-void register_interrupt_handler(u8 vec, u8 type, interrupt_handler_t h)
-{
-    interrupt_handlers[vec].type = type;
-    interrupt_handlers[vec].handler = h;
-}
+
 
 void init_exceptions(void)
 {
@@ -209,10 +199,14 @@ void interrupt_handler(trapframe_t *frame)
     {
         info->handler(frame);
     }
-    
 }
 
-static void pic_disable_irq()
+void enable_irq(u8 irq)
+{
+
+}
+
+void disable_irq(u8 irq)
 {
 
 }

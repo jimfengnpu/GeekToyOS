@@ -23,9 +23,12 @@ typedef struct isr_info{
     interrupt_handler_t handler;
 }isr_info;
 
-extern interrupt_pic_t *interrupt_opts;
-#define _chk_val_opts(ptr) if((ptr))
-#define enable_irq(irq) _chk_val_opts(interrupt_opts) interrupt_opts->enable_irq((irq))
-#define disable_irq(irq) _chk_val_opts(interrupt_opts) interrupt_opts->disable_irq((irq))
+extern isr_info interrupt_handlers[INTERRUPT_MAX];
+
+void register_interrupt_handler(u8 vec, u8 type, interrupt_handler_t h);
+
+// defined in arch
+void enable_irq(u8 irq);
+void disable_irq(u8 irq);
 
 #endif

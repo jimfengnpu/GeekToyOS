@@ -22,7 +22,7 @@ void gdt_set_gate(int num, u32 base, u32 limit, u16 attr) {
 }
 
 // Function to initialize the GDT
-void init_gdt() {
+void gdt_init() {
     gp.limit = (sizeof(descriptor_t) * GDT_LENGTH) - 1;
     gp.base = (u32)&gdt;
     tss[0].ss0 = KERNEL_CS;
