@@ -50,8 +50,8 @@ void console_init()
     console.ylimit = screen_info.height/screen_info.font_height;
     console.xstep = screen_info.font_width;
     console.ystep = screen_info.font_height;
-    klog("screen: %dx%d, fb=0x%lx\n", screen_info.width, screen_info.height, screen_info.base);
-    klog("console:%dx%d\n", console.xlimit, console.ylimit);
+    klog("screen: %dx%d, fb=0x%lx console:%dx%d\n", screen_info.width, screen_info.height, 
+        screen_info.base, console.xlimit, console.ylimit);
 }
 
 static void cputch(int ch, int *count)

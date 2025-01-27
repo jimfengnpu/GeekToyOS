@@ -9,8 +9,9 @@ void kernel_main()
     // halt();
     mboot_info_init();
     console_init();
-    // halt();
     mboot_info_show();
+    mm_init();
+    // halt();
     // map_region(NULL, 0xFFFF804000000000, 0x4000000000, 512*PGSIZE, PTE_W, 0);
     // check_pgtable(0xFFFF804000000000);
     // klog("sizeof types:\n");
@@ -29,11 +30,13 @@ void kernel_main()
     while(1);
 }
 
-void _klog(const char * file, int line, const char *fmt, ...)
+void _klog(const char * file, int line, int level, const char *fmt, ...)
 {
     va_list ap;
     va_start(ap, fmt);
-    // kprintf("%s:%d:", file, line);
+    if(level != LOG_INFO){
+        kprintf("%s:%d:", file, line);
+    }
     vkprintf(fmt, ap);
     va_end(ap);
 }

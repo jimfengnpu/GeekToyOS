@@ -64,8 +64,8 @@ tag_frame_buffer:
         .short MULTIBOOT_HEADER_TAG_FRAMEBUFFER
         .short 0
         .long 20
+        .long 1920
         .long 1080
-        .long 768
         .long 32
 
 tags_end:

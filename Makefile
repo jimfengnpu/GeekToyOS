@@ -21,7 +21,7 @@ install: $(KERNEL_FILE) $(IMG_FILE)
 		make $(IMG_FILE) && \
 		sudo losetup -P $(INS_DEV) $(IMG_FILE); 	\
 	fi
-	bash $(PROJECT_DIR)/install-start.sh $(INS_DEV) $(ROOT_PART) ext2 $(GRUB_PART) $(GRUB_TARGET)
+	bash $(PROJECT_DIR)/install.sh $(INS_DEV) $(ROOT_PART) ext2 $(GRUB_PART) $(GRUB_TARGET)
 	sudo cp $(KERNEL_FILE) mnt/
 	sudo umount mnt
 	@if [[ "$(INSTALL_MODE)" == "virtual" ]]; then	\
@@ -34,7 +34,7 @@ run:
 	$(QEMU) -cdrom $(ISO_FILE) $(QEMU_OPT) -serial file:kernel.log  -device VGA -monitor stdio
 
 gdb: $(IMG_FILE)
-	$(QEMU) -hda $(IMG_FILE) $(QEMU_OPT) -serial file:kernel.log  -device VGA -monitor stdio -d cpu_reset -D qemu.log -gdb tcp::1234 -S
+	$(QEMU) -cdrom $(ISO_FILE) $(QEMU_OPT) -serial file:kernel.log  -device VGA -monitor stdio -d cpu_reset -D qemu.log -gdb tcp::1234 -S
 
 dump_kernel:
 	objdump -D $(KERNEL_FILE) > $(OBJDIR)/kernel.txt

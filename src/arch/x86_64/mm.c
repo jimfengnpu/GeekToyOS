@@ -18,7 +18,7 @@ static  pte_t * pgdir_walk(pgd_t *pgdir, addr_t vaddr, addr_t *paddr, int flag)
         if (!alloc){
             return NULL;
         }
-        pgdir[pgx] = paddr(mm_page_alloc(1)) | pde_attr;
+        pgdir[pgx] = mm_phy_page_alloc(1) | pde_attr;
     }
     pde = kaddr(PTADDR(pgdir[pgx]));
     
@@ -32,7 +32,7 @@ static  pte_t * pgdir_walk(pgd_t *pgdir, addr_t vaddr, addr_t *paddr, int flag)
         if (!alloc){
             return NULL;
         }
-        pde[pux] = paddr(mm_page_alloc(1)) | pde_attr;
+        pde[pux] = mm_phy_page_alloc(1) | pde_attr;
     }
     pde = kaddr(PTADDR(pde[pux]));
     // if((flag & PG_2M) || (pde[pdx] & PTE_PS)) {
@@ -45,7 +45,7 @@ static  pte_t * pgdir_walk(pgd_t *pgdir, addr_t vaddr, addr_t *paddr, int flag)
         if (!alloc){
             return NULL;
         }
-        pde[pdx] = paddr(mm_page_alloc(1)) | pde_attr;
+        pde[pdx] = mm_phy_page_alloc(1) | pde_attr;
     }
     pde = kaddr(PTADDR(pde[pdx]));
     if(paddr){

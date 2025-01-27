@@ -34,14 +34,14 @@ typedef struct list_node list_head;
 #define list_empty(head) \
 	((head)->next == head)
 
-inline void _list_insert(struct list_node* _node, struct list_node* prev, struct list_node* next) {
+static inline void _list_insert(struct list_node* _node, struct list_node* prev, struct list_node* next) {
 	prev->next = _node;
 	next->prev = _node;
 	_node->prev = prev;
 	_node->next = next;
 }
 
-inline void _list_remove(struct list_node* self, struct list_node* prev, struct list_node* next) {
+static inline void _list_remove(struct list_node* self, struct list_node* prev, struct list_node* next) {
 	prev->next = next;
 	next->prev = prev;
 	self->next = self->prev = self;

@@ -20,3 +20,5 @@ typedef unsigned long size_t;
 typedef unsigned int size_t;
 #endif
 
+#define word_size   (sizeof(long))
+

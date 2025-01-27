@@ -21,16 +21,24 @@ struct page{
     u32 flag;
     // buddy
     u32 order;
+    struct list_node buddy_free_list;
+};
 
+struct free_area{
+    size_t count;
+    list_head free_pages;
 };
 
 struct zone {
     struct page *mem_map;
-    u32 pfn_base;
-    u32 nr_pages;
-    list_head free_area[MAX_ORDER];
+    size_t pfn_base;
+    size_t nr_pages;
+    size_t nr_free_pages;
+    struct free_area free_area[MAX_ORDER];
 };
-
+#define pfn_to_page(zone, pfn) ((zone)->mem_map + ((pfn) - ((zone)->pfn_base)))
+#define page_to_pfn(zone, page) ((zone)->pfn_base + ((page) - ((zone)->mem_map)))
+#define PFN_NOTFOUND    ((size_t)-1)
 // virtual(linear) mem struct:
 
 struct mm_struct {
@@ -39,6 +47,6 @@ struct mm_struct {
 
 // note: basic kernel page finished, init buddy using mboot info
 void mm_init();
-// return kern virt addr
-addr_t mm_page_alloc(u32 nr_pages);
+// return phy mem addr
+addr_t mm_phy_page_alloc(size_t nr_pages);
 #endif
