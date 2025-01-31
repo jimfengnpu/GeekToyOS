@@ -24,13 +24,24 @@ void bitmap_set(struct bitmap *map, int value, size_t start, size_t len)
     end_byte = end_bit >> 3;
     start_bound_bit = (start_byte << 3) - start_bit;
     end_bound_bit = end_bit - (end_byte << 3);
+    if(end_byte < start_byte) // in one same byte
+    {
+        mask = (~bit_mask(8 - start_bound_bit)) & bit_mask(end_bound_bit);
+        if(value){
+            map->map[start_byte - 1] |= mask;
+        }else {
+            map->map[start_byte - 1] &= (~mask);
+        }
+        return;
+    }
+
     if(start_bound_bit)
     {
-        mask = bit_mask(8 - start_bound_bit);
+        mask = ~bit_mask(8 - start_bound_bit);
         if(value){
-            map->map[start_byte - 1] |= (~mask);
+            map->map[start_byte - 1] |= mask;
         }else{
-            map->map[start_byte - 1] &= mask; 
+            map->map[start_byte - 1] &= (~mask); 
         }
     }
 
@@ -63,14 +74,29 @@ int bitmap_find(struct bitmap *map, int value, size_t start, size_t len)
     end_byte = end_bit >> 3;
     start_bound_bit = (start_byte << 3) - start_bit;
     end_bound_bit = end_bit - (end_byte << 3);
-    if(start_bound_bit)
+    if(end_byte < start_byte) // in one same byte
     {
-        mask = bit_mask(8 - start_bound_bit);
+        mask = (~bit_mask(8 - start_bound_bit)) & bit_mask(end_bound_bit);
         byte = map->map[start_byte - 1];
         if(value){
-            byte &= (~mask);
+            byte &= mask;
+        }else {
+            byte |= (~mask);
+        }
+        if(byte != skip){
+            found_byte = start_byte - 1;
+            goto _found;
+        }
+        return -1;
+    }
+    if(start_bound_bit)
+    {
+        mask = ~bit_mask(8 - start_bound_bit);
+        byte = map->map[start_byte - 1];
+        if(value){
+            byte &= mask;
         }else{
-            byte |= mask; 
+            byte |= (~mask); 
         }
         if(byte != skip){
             found_byte = start_byte - 1;

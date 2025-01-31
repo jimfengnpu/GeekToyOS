@@ -4,12 +4,17 @@
 #include <kernel/kernel.h>
 #include <kernel/console.h>
 
+#define CON_SERIAL  1
+#define CON_SCREEN  2
+#define CON_FILE    4
+
 console_t console;
+u32 console_flag;
 
 void kputchar(int ch)
 {
-    serial_write_com(1, ch);
-    cputchar(ch);
+    if(console_flag & CON_SERIAL)serial_write_com(1, ch);
+    if(console_flag & CON_SCREEN)cputchar(ch);
 }
 
 
@@ -41,17 +46,18 @@ void cputchar(int ch)
 
 void console_init()
 {
-    serial_init();
-    screen_init();
-    // halt();
     console.x = 0;
     console.y = 0;
-    console.xlimit = screen_info.width/screen_info.font_width;
-    console.ylimit = screen_info.height/screen_info.font_height;
-    console.xstep = screen_info.font_width;
-    console.ystep = screen_info.font_height;
-    klog("screen: %dx%d, fb=0x%lx console:%dx%d\n", screen_info.width, screen_info.height, 
-        screen_info.base, console.xlimit, console.ylimit);
+    if (!serial_init()){console_flag |= CON_SERIAL;}
+    if (!screen_init()){
+        console_flag |= CON_SCREEN;
+        console.xlimit = screen_info.width/screen_info.font_width;
+        console.ylimit = screen_info.height/screen_info.font_height;
+        console.xstep = screen_info.font_width;
+        console.ystep = screen_info.font_height;
+        klog("screen: %dx%d, fb=0x%lx console:%dx%d\n", screen_info.width, screen_info.height, 
+            screen_info.base, console.xlimit, console.ylimit);
+    }
 }
 
 static void cputch(int ch, int *count)

@@ -12,9 +12,9 @@ void serial_write_com(int UNUSED(com), unsigned char UNUSED(data)) {}
 
 static int serial_ok;
 
-void serial_init(void)
+int serial_init(void)
 {
-	// Init COM1 and COM2
+	// Init COM1
 	outb(COM1_PORT + 1, 0x00);    // Disable all interrupts
 	outb(COM1_PORT + 3, 0x80);    // Enable DLAB (set baud rate divisor)
 	outb(COM1_PORT + 0, 0x03);    // Set divisor to 3 (lo byte) 38400 baud
@@ -24,10 +24,7 @@ void serial_init(void)
 	outb(COM1_PORT + 4, 0x0B);    // IRQs enabled, RTS/DSR set
 
 	serial_ok = (inb(COM1_PORT + 5) != 0xFF);
-	// Print a small separator so we can see output clearly
-	const char *msg = "-----------------------------------\n";
-	while (*msg)
-		serial_write_com(1, *msg++);
+	return !serial_ok;
 }
 
 static inline int serial_transmit_empty(uint16_t port)
@@ -37,9 +34,6 @@ static inline int serial_transmit_empty(uint16_t port)
 
 void serial_write_com(int com, unsigned char data)
 {
-	if(!serial_ok){
-		return;
-	}
 	u16 port;
 	switch (com) {
 		case 1:

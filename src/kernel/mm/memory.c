@@ -9,8 +9,11 @@ struct zone mem_zone;
 struct bitmap mem_map;
 struct page *mem_pages;
 static addr_t reserved_end;
+static size_t pfn_max;
+static addr_t phy_addr_limit;
 static int reserved_mem_ready;
 static int buddy_mem_ready;
+static int mm_ready;
 // internal pre allocator
 
 #define MEM_PAGE_AVAIL  0
@@ -26,7 +29,6 @@ void reserved_mem_allocator_init()
         reserved_end = paddr(mboot_info_end);
     }
     reserved_end = align(reserved_end, PGSIZE);
-    info("reserved end:%lx ", reserved_end);
     reserved_mem_ready = 1;
 }
 
@@ -37,6 +39,22 @@ void * reserved_mem_alloc(size_t size)
     reserved_end = align(reserved_end + size, PGSIZE);
     return ptr;
 }
+
+// simple page alloc using bitmap, no free
+size_t block_page_alloc(size_t nr_pages)
+{
+    ssize_t l = 0, r = 0;
+    while(r < pfn_max)
+    {
+        l = bitmap_find(&mem_map, MEM_PAGE_AVAIL, r, pfn_max);
+        r = bitmap_find(&mem_map, MEM_PAGE_USED, l, nr_pages);
+        if(r == -1) {
+            return l;
+        }
+    }
+    return PFN_NOTFOUND;
+}
+
 // mm/buddy.c
 void buddy_init_zone(struct zone *zone, size_t pfn_start, size_t nr_pages);
 size_t buddy_page_alloc(struct zone *zone, size_t nr_pages);
@@ -49,9 +67,8 @@ for (mmap = ((struct multiboot_tag_mmap *) tag)->entries;   \
         (u8 *) mmap < (u8 *) tag + tag->size;   \
         mmap = (multiboot_memory_map_t *) ((addr_t) mmap + ((struct multiboot_tag_mmap *) tag)->entry_size))
 
-void pmm_init()
+void mem_map_init()
 {
-    addr_t phy_addr_limit = 0;
     struct multiboot_tag *tag = mboot_get_mboot_info(MULTIBOOT_TAG_TYPE_MMAP);
     multiboot_memory_map_t *mmap;
     // first iter, get max phy page size
@@ -65,15 +82,12 @@ void pmm_init()
     phy_addr_limit = align(phy_addr_limit, PGSIZE);
     info("phy limit: %lx ", phy_addr_limit);
     reserved_mem_allocator_init();
-    size_t pfn_max = div_round_up(phy_addr_limit, PGSIZE);
+    pfn_max = div_round_up(phy_addr_limit, PGSIZE);
     size_t bitmap_size = div_round_up(pfn_max, 8);
     // alloc bitmap and set all allocated
     u8* bitmap_arr = kaddr(reserved_mem_alloc(bitmap_size));
     bitmap_init(&mem_map, bitmap_arr, pfn_max);
     bitmap_set(&mem_map, MEM_PAGE_USED, 0, pfn_max);
-    // alloc page stuct using reserved_mem_alloc
-    mem_pages = kaddr(reserved_mem_alloc(pfn_max * sizeof(struct page)));
-    buddy_init_zone(&mem_zone, 0, pfn_max);
     // second alloc, set available mem as free mem
     for_mmap(mmap, tag)
     {
@@ -88,12 +102,39 @@ void pmm_init()
                 len = base + len - reserved_end;
                 base = reserved_end;
             }
-            // info("add pmm range:0x%lx:%x\n", base, len);
-            mm_phy_page_free(base, len / PGSIZE);   
+            bitmap_set(&mem_map, MEM_PAGE_AVAIL, base >> PGSHIFT, len / PGSIZE);
         }
     }
+}
+
+void buddy_init()
+{
+    // alloc page stuct using reserved_mem_alloc
+    mem_pages = kaddr(mm_phy_page_alloc(div_round_up(pfn_max * sizeof(struct page), PGSIZE)));
+    buddy_init_zone(&mem_zone, 0, pfn_max);
+    ssize_t l = 0, r = 0;
+    while(r < pfn_max)
+    {
+        l = bitmap_find(&mem_map, MEM_PAGE_AVAIL, r, pfn_max);
+        r = bitmap_find(&mem_map, MEM_PAGE_USED, l, pfn_max);
+        if(r == -1) {
+            r = pfn_max;
+        }
+        buddy_page_free(&mem_zone, l, r - l);
+    }
+}
+
+void pmm_init()
+{
+    mem_map_init();
+    mm_ready = 1;
+    // now use bitmap alloc
+    // map kernel page use bitmap alloc, as low page as possible
+    arch_map_kernel_page(phy_addr_limit);
+    // buddy init
+    buddy_init();
     buddy_mem_ready = 1;
-    info("phy mem init: %d/%d pages\n", mem_zone.nr_free_pages, mem_zone.nr_pages);
+    info("phy buddy mem init: %d/%d pages\n", mem_zone.nr_free_pages, mem_zone.nr_pages);
 }
 
 void mm_init(){
@@ -103,17 +144,23 @@ void mm_init(){
 
 addr_t mm_phy_page_alloc(size_t nr_pages)
 {
-    if(buddy_mem_ready){
-        size_t pfn =  buddy_page_alloc(&mem_zone, nr_pages);
-        mem_zone.nr_free_pages -= nr_pages;
-        bitmap_set(&mem_map, MEM_PAGE_USED, pfn, nr_pages);
-        return (pfn << PGSHIFT);
-    }else{
+    if(!mm_ready){
         if(!reserved_mem_ready){
             reserved_mem_allocator_init();
         }
         return reserved_mem_alloc(nr_pages * PGSIZE);
     }
+    size_t pfn;
+    if (buddy_mem_ready) {
+        pfn = buddy_page_alloc(&mem_zone, nr_pages);
+    } else {
+        pfn = block_page_alloc(nr_pages);
+    }
+    if (pfn == PFN_NOTFOUND) {
+        error("alloc failed\n");
+    }
+    bitmap_set(&mem_map, MEM_PAGE_USED, pfn, nr_pages);
+    return (pfn << PGSHIFT);
 }
 
 void mm_phy_page_free(addr_t addr, size_t nr_pages)
@@ -128,7 +175,6 @@ void mm_phy_page_free(addr_t addr, size_t nr_pages)
     {
         warning("phy addr double free:pfn_0x%x\n", check);
     }
-    mem_zone.nr_free_pages += nr_pages;
     bitmap_set(&mem_map, MEM_PAGE_AVAIL, pfn_start, nr_pages);
     buddy_page_free(&mem_zone, pfn_start, nr_pages);
 }

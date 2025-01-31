@@ -38,14 +38,10 @@ void pic_init(void)
         outb(IO_PIC1C, 0x01);
         outb(IO_PIC2C, 0x01);
         
-        // 设置主从片允许中断
-        outb(IO_PIC1C, 0x0);
-        outb(IO_PIC2C, 0x0);
-
-        // x86_64 使用APIC接管中断
+        // 暂时先关闭
+        // todo: 多核 使用APIC接管中断
         outb(IO_PIC1C, 0xFF);
         outb(IO_PIC2C, 0xFF);
-        interrupt_enable();
 }
 
 // 中断描述符
@@ -195,6 +191,7 @@ void interrupt_init(void)
 void interrupt_handler(trapframe_t *frame)
 {
     struct isr_info* info = &interrupt_handlers[frame->int_no];
+    cprintf("int: %d", frame->int_no);
     if (info->handler)
     {
         info->handler(frame);

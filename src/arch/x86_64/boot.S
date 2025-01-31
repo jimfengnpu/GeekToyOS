@@ -92,11 +92,11 @@ start:
         mov     %eax, %edi
         mov     %ebx, %esi
 
-        # movl    $0x80000001, %eax
-        # cpuid
-        # andl    $0x20000000, %edx
-        # cmp     $0, %edx
-        # je      .loop # no long mode support
+        movl    $0x80000001, %eax
+        cpuid
+        andl    $0x20000000, %edx
+        cmp     $0, %edx
+        je      .loop # no long mode support
 
         # clear eflags
         pushl   $0
@@ -118,14 +118,11 @@ start:
         movl    $pgd, %ebx     
         mov     %eax, (%ebx, %ecx, 8)
 
-        # mov     $pmd, %eax
-        xor     %eax, %eax
-        or      $(PDE_ATTR_P | PDE_ATTR_RW | PDE_ATTR_PS), %eax
+        mov     $pmd, %eax
+        # xor     %eax, %eax
+        or      $(PDE_ATTR_P | PDE_ATTR_RW), %eax
         mov     %eax, pud
 
-        xor     %eax, %eax
-        mov     %eax, (pgd + 4)
-        mov     %eax, (pud + 4)
         
         /*mov     $pud, %ebx
         mov     $pmd, %eax
@@ -153,19 +150,25 @@ start:
         add     $(PAGE_SIZE), %eax
         or      $(PDE_ATTR_P | PDE_ATTR_RW), %eax
         mov     %eax, 8(%ebx)
-        
+        */
         xor     %ecx, %ecx
-        movl    $pagetable, %ebx
-        //movl    $pmd, %ebx
+        //movl    $pagetable, %ebx
+        movl    $pmd, %ebx
 .loop_makepage:
         movl    %ecx, %eax
-        sal     $12, %eax
-        or      $(PDE_ATTR_P | PDE_ATTR_RW), %eax
+        sal     $21, %eax
+        or      $(PDE_ATTR_P | PDE_ATTR_RW | PDE_ATTR_PS), %eax
         movl    %eax, (%ebx,%ecx,8)
+        movl    $0, 4(%ebx,%ecx,8)
         inc     %ecx
-        cmp     $1024, %ecx
+        cmp     $512, %ecx
         jl      .loop_makepage
-        */
+        
+        xor     %eax, %eax
+        mov     %eax, (pgd + 4)
+        mov     %eax, (pud + 4)
+        //mov     %eax, (pmd + 4)
+        //mov     %eax, (pmd + 12)
         # load page table
         mov     $pgd, %eax
         mov     %eax, %cr3
@@ -246,7 +249,7 @@ pgd:
         .space  PAGE_SIZE
 pud:
         .space  PAGE_SIZE
-//pmd:
-//        .space  PAGE_SIZE
+pmd:
+        .space  PAGE_SIZE
 //pagetable:
 //        .space  PAGE_SIZE

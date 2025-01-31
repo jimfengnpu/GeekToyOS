@@ -79,7 +79,7 @@ size_t buddy_page_alloc(struct zone *zone, size_t nr_pages)
         if(search_order != order) {
             expand_buddy(zone, page, search_order, order);
         }
-        set_buddy_order(page, order);
+        zone->nr_free_pages -= nr_pages;
         return page_to_pfn(zone, page);
     }
     return PFN_NOTFOUND;
@@ -123,6 +123,7 @@ void buddy_page_free(struct zone *zone, size_t pfn, size_t nr_pages)
     if(!(pfn >= zone->pfn_base && pfn + nr_pages <= zone->pfn_base + zone->nr_pages)){
         error("pfn out of zone range:pfn_%x:%x", pfn, nr_pages);
     }
+    zone->nr_free_pages += nr_pages;
     while(nr_pages)
     {
         int order;
@@ -135,6 +136,7 @@ void buddy_page_free(struct zone *zone, size_t pfn, size_t nr_pages)
                 __buddy_page_free(zone, pfn, order);
                 pfn += order_size;
                 nr_pages -= order_size;
+                break;
             }
         }
     }

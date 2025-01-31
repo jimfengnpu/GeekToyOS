@@ -80,14 +80,18 @@ void psf_init()
     }
 }
 
-void screen_init()
+int screen_init()
 {
     struct multiboot_tag_framebuffer *tag = mboot_get_mboot_info(MULTIBOOT_TAG_TYPE_FRAMEBUFFER);
+    if (tag == NULL) {
+        return -1;
+    }
     screen_info.base = kaddr(tag->common.framebuffer_addr);
     screen_info.bpp = div_round_up(tag->common.framebuffer_bpp, 8);
     screen_info.height = tag->common.framebuffer_height;
     screen_info.width = tag->common.framebuffer_width;
     screen_info.pitch = tag->common.framebuffer_pitch;
+    arch_map_region(NULL, screen_info.base, tag->common.framebuffer_addr, screen_info.pitch*screen_info.height, PTE_W);
     switch (tag->common.framebuffer_type)
     {
     case MULTIBOOT_FRAMEBUFFER_TYPE_RGB:
@@ -124,7 +128,7 @@ void screen_init()
     // load psf
         psf_init();
     }
-
+    return 0;
 }
 
 
@@ -215,6 +219,9 @@ u32 trans_color2pixel(u32 color)
 
 void screen_input_char(u32 x, u32 y, u32 front_color, u32 back_color, u32 chr)
 {
+    if (!screen_info.base){
+        return;
+    }
     u32 pixel, pixel_back;
     pixel = trans_color2pixel(front_color);
     pixel_back = trans_color2pixel(back_color);

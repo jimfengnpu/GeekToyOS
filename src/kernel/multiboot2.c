@@ -31,91 +31,91 @@ void mboot_info_show()
                     ((struct multiboot_tag_string *) tag)->string);
             break;
             case MULTIBOOT_TAG_TYPE_BOOT_LOADER_NAME:
-            klog ("Boot loader name = %s\n",
-                    ((struct multiboot_tag_string *) tag)->string);
+            // klog ("Boot loader name = %s\n",
+            //         ((struct multiboot_tag_string *) tag)->string);
             break;
             case MULTIBOOT_TAG_TYPE_MODULE:
-            klog ("Module at 0x%x-0x%x. Command line %s\n",
-                    ((struct multiboot_tag_module *) tag)->mod_start,
-                    ((struct multiboot_tag_module *) tag)->mod_end,
-                    ((struct multiboot_tag_module *) tag)->cmdline);
+            // klog ("Module at 0x%x-0x%x. Command line %s\n",
+            //         ((struct multiboot_tag_module *) tag)->mod_start,
+            //         ((struct multiboot_tag_module *) tag)->mod_end,
+            //         ((struct multiboot_tag_module *) tag)->cmdline);
             break;
             case MULTIBOOT_TAG_TYPE_BASIC_MEMINFO:
-            klog ("mem_lower = %uKB, mem_upper = %uKB\n",
-                    ((struct multiboot_tag_basic_meminfo *) tag)->mem_lower,
-                    ((struct multiboot_tag_basic_meminfo *) tag)->mem_upper);
+            // klog ("mem_lower = %uKB, mem_upper = %uKB\n",
+            //         ((struct multiboot_tag_basic_meminfo *) tag)->mem_lower,
+            //         ((struct multiboot_tag_basic_meminfo *) tag)->mem_upper);
             break;
             case MULTIBOOT_TAG_TYPE_BOOTDEV:
-            klog ("Boot device 0x%x,%u,%u\n",
-                    ((struct multiboot_tag_bootdev *) tag)->biosdev,
-                    ((struct multiboot_tag_bootdev *) tag)->slice,
-                    ((struct multiboot_tag_bootdev *) tag)->part);
+            // klog ("Boot device 0x%x,%u,%u\n",
+            //         ((struct multiboot_tag_bootdev *) tag)->biosdev,
+            //         ((struct multiboot_tag_bootdev *) tag)->slice,
+            //         ((struct multiboot_tag_bootdev *) tag)->part);
             break;
             case MULTIBOOT_TAG_TYPE_MMAP:
             {
-                multiboot_memory_map_t *mmap;
+                // multiboot_memory_map_t *mmap;
 
-                klog ("mmap\n");
+                // klog ("mmap\n");
         
-                for (mmap = ((struct multiboot_tag_mmap *) tag)->entries;
-                    (u8 *) mmap < (u8 *) tag + tag->size;
-                    mmap = (multiboot_memory_map_t *) 
-                    ((unsigned long) mmap + ((struct multiboot_tag_mmap *) tag)->entry_size))
-                {
-                    klog (" base_addr = 0x%lx,"
-                        " length = 0x%lx, type = 0x%x\n",
-                        mmap->addr, mmap->len,
-                        (unsigned) mmap->type);
-                }
+                // for (mmap = ((struct multiboot_tag_mmap *) tag)->entries;
+                //     (u8 *) mmap < (u8 *) tag + tag->size;
+                //     mmap = (multiboot_memory_map_t *) 
+                //     ((unsigned long) mmap + ((struct multiboot_tag_mmap *) tag)->entry_size))
+                // {
+                //     klog (" base_addr = 0x%lx,"
+                //         " length = 0x%lx, type = 0x%x\n",
+                //         mmap->addr, mmap->len,
+                //         (unsigned) mmap->type);
+                // }
             }
             break;
             case MULTIBOOT_TAG_TYPE_FRAMEBUFFER:
             {
-                multiboot_uint32_t color;
-                unsigned i;
-                struct multiboot_tag_framebuffer *tagfb
-                = (struct multiboot_tag_framebuffer *) tag;
-                void *fb = (void *) (unsigned long) kaddr(tagfb->common.framebuffer_addr);
-                switch (tagfb->common.framebuffer_type)
-                {
-                case MULTIBOOT_FRAMEBUFFER_TYPE_INDEXED:
-                    {
-                    unsigned best_distance, distance;
-                    struct multiboot_color *palette;
+                // multiboot_uint32_t color;
+                // unsigned i;
+                // struct multiboot_tag_framebuffer *tagfb
+                // = (struct multiboot_tag_framebuffer *) tag;
+                // void *fb = (void *) (unsigned long) kaddr(tagfb->common.framebuffer_addr);
+                // switch (tagfb->common.framebuffer_type)
+                // {
+                // case MULTIBOOT_FRAMEBUFFER_TYPE_INDEXED:
+                //     {
+                //     unsigned best_distance, distance;
+                //     struct multiboot_color *palette;
                 
-                    palette = tagfb->framebuffer_palette;
+                //     palette = tagfb->framebuffer_palette;
 
-                    color = 0;
-                    best_distance = 4*256*256;
+                //     color = 0;
+                //     best_distance = 4*256*256;
                 
-                    for (i = 0; i < tagfb->framebuffer_palette_num_colors; i++)
-                        {
-                        distance = (0xff - palette[i].blue) 
-                            * (0xff - palette[i].blue)
-                            + palette[i].red * palette[i].red
-                            + palette[i].green * palette[i].green;
-                        if (distance < best_distance)
-                            {
-                            color = i;
-                            best_distance = distance;
-                            }
-                        }
-                    }
-                    break;
+                //     for (i = 0; i < tagfb->framebuffer_palette_num_colors; i++)
+                //         {
+                //         distance = (0xff - palette[i].blue) 
+                //             * (0xff - palette[i].blue)
+                //             + palette[i].red * palette[i].red
+                //             + palette[i].green * palette[i].green;
+                //         if (distance < best_distance)
+                //             {
+                //             color = i;
+                //             best_distance = distance;
+                //             }
+                //         }
+                //     }
+                //     break;
 
-                case MULTIBOOT_FRAMEBUFFER_TYPE_RGB:
-                    color = ((1 << tagfb->framebuffer_blue_mask_size) - 1) 
-                    << tagfb->framebuffer_blue_field_position;
-                    break;
+                // case MULTIBOOT_FRAMEBUFFER_TYPE_RGB:
+                //     color = ((1 << tagfb->framebuffer_blue_mask_size) - 1) 
+                //     << tagfb->framebuffer_blue_field_position;
+                //     break;
 
-                case MULTIBOOT_FRAMEBUFFER_TYPE_EGA_TEXT:
-                    color = '\\' | 0x0100;
-                    break;
+                // case MULTIBOOT_FRAMEBUFFER_TYPE_EGA_TEXT:
+                //     color = '\\' | 0x0100;
+                //     break;
 
-                default:
-                    color = 0xffffffff;
-                    break;
-                }
+                // default:
+                //     color = 0xffffffff;
+                //     break;
+                // }
                 
                 // for (i = 0; i < tagfb->common.framebuffer_width
                 //     && i < tagfb->common.framebuffer_height; i++)
@@ -161,7 +161,7 @@ void mboot_info_show()
         }
     tag = (struct multiboot_tag *) ((multiboot_uint8_t *) tag 
                                     + ((tag->size + 7) & ~7));
-    klog ("Total mbi size 0x%x\n", (unsigned) tag - addr);
+    // klog ("Total mbi size 0x%x\n", (unsigned) tag - addr);
 }
 
 struct multiboot_tag * mboot_get_mboot_info(u32 type)

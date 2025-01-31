@@ -10,13 +10,11 @@ typedef uint64_t    u64;
 
 #ifdef ARCH_64BIT
 typedef u64 addr_t;
-#else
-typedef u32 addr_t;
-#endif
-
-#ifdef ARCH_64BIT
+typedef long ssize_t;
 typedef unsigned long size_t;
 #else
+typedef u32 addr_t;
+typedef int ssize_t;
 typedef unsigned int size_t;
 #endif
 

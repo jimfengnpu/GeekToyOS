@@ -12,7 +12,7 @@ void kernel_main()
     mboot_info_show();
     mm_init();
     // halt();
-    // map_region(NULL, 0xFFFF804000000000, 0x4000000000, 512*PGSIZE, PTE_W, 0);
+    // arch_map_region(NULL, 0xFFFF804000000000, 0x4000000000, 512*PGSIZE, PTE_W, 0);
     // check_pgtable(0xFFFF804000000000);
     // klog("sizeof types:\n");
     // klog("int:%u\n",sizeof(int));
