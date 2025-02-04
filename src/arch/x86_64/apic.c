@@ -58,7 +58,7 @@ static void add_override(struct madt_entry_override *entry)
 	if (override_list_size >= MAX_OVERRIDES)
 		return;
 	override_list[override_list_size++] = entry;
-	// klog("APIC:GSI %d overrides IRQ %u, flags %x\n", entry->gsi, entry->source, entry->flags);
+	klog("APIC:GSI %d overrides IRQ %u, flags %x\n", entry->gsi, entry->source, entry->flags);
 }
 
 static void add_nmi(struct madt_entry_nmi *entry)
@@ -166,9 +166,9 @@ u8 lapic_id(void)
 // Returns the number of ticks in 10ms
 u32 lapic_timer_prepare(void)
 {
-	const u32 test_ms = 50;
+	const u32 test_ms = 100;
 	const u32 ticks_initial = 0xFFFFFFFF;
-	
+	clock_sleep(1); // sync to clock interrupt
 	lapic_write(APIC_REG_TIMER_DIVIDE, 0x3);
 	lapic_write(APIC_REG_TIMER_INITIAL, ticks_initial);
 	clock_sleep(test_ms * HZ / 1000);

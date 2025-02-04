@@ -45,7 +45,9 @@ struct mm_struct {
     pgd_t *pgd;
 };
 
-// note: basic kernel page finished, init buddy using mboot info
+// note: basic kernel page finished
+void mem_init();
+// init buddy 
 void mm_init();
 // return phy mem addr
 addr_t mm_phy_page_alloc(size_t nr_pages);

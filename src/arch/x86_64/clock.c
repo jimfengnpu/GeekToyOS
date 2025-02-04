@@ -63,7 +63,7 @@ u32 arch_get_hw_timestamp(){
 			     * Counter0 - LSB then MSB - rate generator - binary
 			     */
 #define TIMER_FREQ     1193182L/* clock frequency for timer in PC and AT */
-void pit_init()
+void pit_start()
 {
     outb(TIMER_MODE, RATE_GENERATOR);
 	outb(TIMER0, (u8)(TIMER_FREQ / HZ));
@@ -75,9 +75,7 @@ void pit_init()
 int arch_clock_init(){
     if(hpet_init()){
         clock_type = 1;
-    }else {
-    	pit_init();
-	}
+    }
 	register_interrupt_handler(IRQ_TO_INT(CLOCK_IRQ), ISR_IRQ, clock_handler);
     return 1;
 }
@@ -87,7 +85,9 @@ void arch_clock_start(void)
 {
     if (clock_type){
         hpet_start();
-    }
+    }else {
+		pit_start();
+	}
 }
 
 void lapic_timer_enable(); // apic.c

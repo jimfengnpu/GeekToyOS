@@ -118,6 +118,10 @@ int hpet_init()
         hpet_write(HPET_REG_TIMER(i) + HPET_TIMER_CNF_CAP, 
             hpet_read(HPET_REG_TIMER(i) + HPET_TIMER_CNF_CAP) & (~HPET_TIMER_CNF_ENABLE));
     }
+    if (valid_timer == -1) {
+        info("HPET:no valid period timer, fallback using pit clock\n");
+        return 0;
+    }
     return 1;
 }
 

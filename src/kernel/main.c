@@ -7,6 +7,8 @@
 void kernel_main()
 {
     mboot_info_init();
+    mem_init();
+    // halt();
     console_init();
     mboot_info_show();
     mm_init();

@@ -68,7 +68,7 @@ else
 QEMU_BIOS_OPT=-bios /usr/share/qemu/OVMF.fd
 endif
 
-QEMU_OPT= $(QEMU_BIOS_OPT)
+QEMU_OPT= $(QEMU_BIOS_OPT) -smp cpus=2 -m 4G
 # disk & grub
 ifeq ($(BOOT_TYPE),pc)
 MK_DISK=fdisk

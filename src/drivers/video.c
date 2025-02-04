@@ -91,7 +91,7 @@ int screen_init()
     screen_info.height = tag->common.framebuffer_height;
     screen_info.width = tag->common.framebuffer_width;
     screen_info.pitch = tag->common.framebuffer_pitch;
-    arch_map_region(NULL, screen_info.base, tag->common.framebuffer_addr, screen_info.pitch*screen_info.height, PTE_W);
+    arch_map_region(NULL, screen_info.base, tag->common.framebuffer_addr, align(screen_info.pitch*screen_info.height, PGSIZE), PTE_W | PTE_G);
     switch (tag->common.framebuffer_type)
     {
     case MULTIBOOT_FRAMEBUFFER_TYPE_RGB:

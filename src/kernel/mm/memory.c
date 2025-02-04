@@ -80,7 +80,6 @@ void mem_map_init()
         }
     }
     phy_addr_limit = align(phy_addr_limit, PGSIZE);
-    info("Mem phy limit: %lx ", phy_addr_limit);
     reserved_mem_allocator_init();
     pfn_max = div_round_up(phy_addr_limit, PGSIZE);
     size_t bitmap_size = div_round_up(pfn_max, 8);
@@ -125,16 +124,20 @@ void buddy_init()
 }
 
 void pmm_init()
-{
+{ 
+    info("Mem phy limit: %lx ", phy_addr_limit);
+    // buddy init
+    buddy_init();
+    buddy_mem_ready = 1;
+    info("buddy init: %d/%d pages\n", mem_zone.nr_free_pages, mem_zone.nr_pages);
+}
+
+void mem_init(){
     mem_map_init();
     mm_ready = 1;
     // now use bitmap alloc
     // map kernel page use bitmap alloc, as low page as possible
     arch_map_kernel_page(phy_addr_limit);
-    // buddy init
-    buddy_init();
-    buddy_mem_ready = 1;
-    info("buddy init: %d/%d pages\n", mem_zone.nr_free_pages, mem_zone.nr_pages);
 }
 
 void mm_init(){
