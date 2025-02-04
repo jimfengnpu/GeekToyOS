@@ -1,6 +1,4 @@
-#ifndef TIME_H
-#define TIME_H
-#include <kernel/kernel.h>
+#pragma once
 struct tm
 {
 	int tm_sec;			/* Seconds.	[0-60] (1 leap second) */
@@ -19,8 +17,5 @@ struct tm
 #define UTC 			0
 #define LOCAL_TIMEZONE	+8// timestamp use UTC， localtime UTC+8
 #define RTC_TIMEZONE	UTC// read cmos rtc as UTC
-extern u32  current_timestamp;
-extern int	ticks;
-void clock_init();
-u32 get_init_rtc_timestamp();
-#endif
+
+int strftime(char *s, int max, const char *fmt, struct tm* tm_time);

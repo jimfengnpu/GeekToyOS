@@ -14,12 +14,12 @@ u32 console_flag;
 void kputchar(int ch)
 {
     if(console_flag & CON_SERIAL)serial_write_com(1, ch);
-    if(console_flag & CON_SCREEN)cputchar(ch);
 }
 
 
 void cputchar(int ch)
 {
+    kputchar(ch);
     switch (ch)
     {
     case '\n':
@@ -48,14 +48,14 @@ void console_init()
 {
     console.x = 0;
     console.y = 0;
-    if (!serial_init()){console_flag |= CON_SERIAL;}
-    if (!screen_init()){
+    if (serial_init()){console_flag |= CON_SERIAL;}
+    if (screen_init()){
         console_flag |= CON_SCREEN;
         console.xlimit = screen_info.width/screen_info.font_width;
         console.ylimit = screen_info.height/screen_info.font_height;
         console.xstep = screen_info.font_width;
         console.ystep = screen_info.font_height;
-        klog("screen: %dx%d, fb=0x%lx console:%dx%d\n", screen_info.width, screen_info.height, 
+        info("screen: %dx%d, fb=0x%lx console:%dx%d\n", screen_info.width, screen_info.height, 
             screen_info.base, console.xlimit, console.ylimit);
     }
 }

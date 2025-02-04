@@ -24,7 +24,7 @@ int serial_init(void)
 	outb(COM1_PORT + 4, 0x0B);    // IRQs enabled, RTS/DSR set
 
 	serial_ok = (inb(COM1_PORT + 5) != 0xFF);
-	return !serial_ok;
+	return serial_ok;
 }
 
 static inline int serial_transmit_empty(uint16_t port)

@@ -1,6 +1,7 @@
 #ifndef SECTION_H
 #define SECTION_H
 
+#define __packed__ __attribute__((packed))
 #define __section__(name) __attribute__((section(name)))
 
 #define __init_text __section__(".init.text")

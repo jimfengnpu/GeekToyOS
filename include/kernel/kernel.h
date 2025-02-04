@@ -8,6 +8,8 @@
 #include <kernel/section.h>
 #include <kernel/console.h>
 
+#define MAX_CORES   32
+
 #define kaddr(addr) ((addr_t) ((addr_t)(addr) + KERN_BASE))
 #define paddr(addr) ((addr_t) ((addr_t)(addr) - KERN_BASE))
 

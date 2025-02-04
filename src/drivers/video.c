@@ -84,7 +84,7 @@ int screen_init()
 {
     struct multiboot_tag_framebuffer *tag = mboot_get_mboot_info(MULTIBOOT_TAG_TYPE_FRAMEBUFFER);
     if (tag == NULL) {
-        return -1;
+        return 0;
     }
     screen_info.base = kaddr(tag->common.framebuffer_addr);
     screen_info.bpp = div_round_up(tag->common.framebuffer_bpp, 8);
@@ -128,7 +128,7 @@ int screen_init()
     // load psf
         psf_init();
     }
-    return 0;
+    return 1;
 }
 
 
@@ -153,7 +153,7 @@ static void screen_put_pixel(size_t x, size_t y, u32 pixel)
             *((u32*)pptr) = pixel;
         break;
     default:
-        klog("invalid bpp");
+        error("invalid bpp");
         break;
     }
 }

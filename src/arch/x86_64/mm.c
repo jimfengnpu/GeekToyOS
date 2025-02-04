@@ -8,11 +8,28 @@ pgd_t *kernel_pgd;
 #define PG_ALLOC    4
 #define PG_2M   1
 #define PG_1G   2
+
+static void expand_page(pde_t *pde, int table_level)
+{
+    addr_t phy = PTADDR(*pde);
+    int attr = PGOFF(PGOFF(*pde) & (~PTE_PS));
+    *pde = mm_phy_page_alloc(1) | (PTE_W|PTE_P);
+    pde_t *new_pg = kaddr(PTADDR(*pde));
+    size_t pg_size = PGSIZE;
+    if(table_level){
+        pg_size = PTSIZE;
+    }
+    for(size_t i = 0; i < NPDENTRIES; i++){
+        new_pg[i] = (phy + pg_size*i)|((table_level?PTE_PS:0)|attr);
+    }
+}
+
 static  pte_t * pgdir_walk(pgd_t *pgdir, addr_t vaddr, addr_t *paddr, int flag)
 {
     u32 pgx= PGX(vaddr), pux = PUX(vaddr), pdx = PDX(vaddr), ptx = PTX(vaddr);
     u32 pde_attr = PTE_P | PTE_W;
     int alloc = flag & PG_ALLOC;
+    int table_level = flag & 3;
     pde_t *pde = NULL;
     if (!(pgdir[pgx] & PTE_P)) {
         if (!alloc){
@@ -21,32 +38,39 @@ static  pte_t * pgdir_walk(pgd_t *pgdir, addr_t vaddr, addr_t *paddr, int flag)
         pgdir[pgx] = mm_phy_page_alloc(1) | pde_attr;
     }
     pde = kaddr(PTADDR(pgdir[pgx]));
-    
-    if((flag & PG_1G) || (pde[pux] & PTE_PS)) {
+    if((flag & PG_1G)) {
         if(paddr){
             *paddr = ((pde[pux] & (~bit_mask(PUXSHIFT))) | (vaddr & bit_mask(PUXSHIFT)));
         }
         return &pde[pux];
     }
+
     if (!(pde[pux] & PTE_P)) {
         if (!alloc){
             return NULL;
         }
         pde[pux] = mm_phy_page_alloc(1) | pde_attr;
+    }else if(pde[pux] & PTE_PS) {
+        expand_page(&pde[pux], 1);
     }
+
     pde = kaddr(PTADDR(pde[pux]));
-    if((flag & PG_2M) || (pde[pdx] & PTE_PS)) {
+    if((flag & PG_2M)) {
         if(paddr){
             *paddr = ((pde[pdx] & (~bit_mask(PDXSHIFT))) | (vaddr & bit_mask(PDXSHIFT)));
         }
         return &pde[pdx];
     }
+
     if (!(pde[pdx] & PTE_P)) {
         if (!alloc){
             return NULL;
         }
         pde[pdx] = mm_phy_page_alloc(1) | pde_attr;
+    }else if(pde[pdx] & PTE_PS) {
+        expand_page(&pde[pdx], 0);
     }
+
     pde = kaddr(PTADDR(pde[pdx]));
     if(paddr){
         *paddr = ((pde[ptx] & (~bit_mask(PTXSHIFT))) | (vaddr & bit_mask(PTXSHIFT)));
@@ -58,11 +82,11 @@ addr_t check_pgtable(addr_t vaddr)
 {
     addr_t addr = NULL;
     pte_t *pte = pgdir_walk(kernel_pgd, vaddr, &addr, 0);
-    // if(pte==NULL){
-    //     klog("%lx=> no page\n", vaddr);
-    // }else{
-    //     klog("%lx=> %lx\n", vaddr, addr);
-    // }
+    if(pte==NULL){
+        debug("%lx=> no page\n", vaddr);
+    }else{
+        debug("%lx=> %lx\n", vaddr, addr);
+    }
     return addr;
 }
 
@@ -124,13 +148,5 @@ void arch_map_kernel_page(addr_t max_phy_addr)
     if (max_phy_addr <= PHY_BOOT_BASE){
         return;
     }
-    // addr_t phy_1gb_page_end = PHY_BOOT_BASE;
-    // addr_t phy_large_page_end = align_down(max_phy_addr, PTSIZE);
-    // if (check_cpu_feature(FEAT_X86_Page1GB)){
-    //     phy_1gb_page_end = align_down(max_phy_addr, PTSIZE * NPTENTRIES);
-    // }
-    // __map_region(NULL, kaddr(PHY_BOOT_BASE), PHY_BOOT_BASE, phy_1gb_page_end - PHY_BOOT_BASE, PTE_W, 2);
-    // arch_map_region(NULL, kaddr(phy_1gb_page_end), phy_1gb_page_end, phy_large_page_end - phy_1gb_page_end, PTE_W, 1);
-    // arch_map_region(NULL, kaddr(phy_large_page_end), phy_large_page_end, max_phy_addr - phy_large_page_end, PTE_W, 0);
-    arch_map_region(NULL, kaddr(PHY_BOOT_BASE), PHY_BOOT_BASE, max_phy_addr - PHY_BOOT_BASE, PTE_W);
+    arch_map_region(NULL, kaddr(PHY_BOOT_BASE), PHY_BOOT_BASE, max_phy_addr - PHY_BOOT_BASE, PTE_W|PTE_G);
 }

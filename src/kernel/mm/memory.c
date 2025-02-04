@@ -80,7 +80,7 @@ void mem_map_init()
         }
     }
     phy_addr_limit = align(phy_addr_limit, PGSIZE);
-    info("phy limit: %lx ", phy_addr_limit);
+    info("Mem phy limit: %lx ", phy_addr_limit);
     reserved_mem_allocator_init();
     pfn_max = div_round_up(phy_addr_limit, PGSIZE);
     size_t bitmap_size = div_round_up(pfn_max, 8);
@@ -88,7 +88,7 @@ void mem_map_init()
     u8* bitmap_arr = kaddr(reserved_mem_alloc(bitmap_size));
     bitmap_init(&mem_map, bitmap_arr, pfn_max);
     bitmap_set(&mem_map, MEM_PAGE_USED, 0, pfn_max);
-    // second alloc, set available mem as free mem
+    // second iter, set available mem as free mem
     for_mmap(mmap, tag)
     {
         if(mmap->type == MULTIBOOT_MEMORY_AVAILABLE)
@@ -134,7 +134,7 @@ void pmm_init()
     // buddy init
     buddy_init();
     buddy_mem_ready = 1;
-    info("phy buddy mem init: %d/%d pages\n", mem_zone.nr_free_pages, mem_zone.nr_pages);
+    info("buddy init: %d/%d pages\n", mem_zone.nr_free_pages, mem_zone.nr_pages);
 }
 
 void mm_init(){
@@ -169,7 +169,6 @@ void mm_phy_page_free(addr_t addr, size_t nr_pages)
         error("phy addr free should in page boundary:%lx", addr);
     }
     size_t pfn_start = addr >> PGSHIFT;
-    // info("try to free pfn0x%x:%x\n",pfn_start, nr_pages);
     int check = bitmap_find(&mem_map, MEM_PAGE_AVAIL, pfn_start, nr_pages);
     if(check != -1)
     {

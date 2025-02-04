@@ -45,7 +45,7 @@ void pic_init(void)
 }
 
 // 重设 8259A 芯片
-void clear_pic(u32 intr_no)
+void pic_eoi(u32 intr_no)
 {
         // 发送中断结束信号给 PICs
         // 按照我们的设置，从 32 号中断起为用户自定义中断
@@ -69,14 +69,14 @@ struct idt_entry_t {
         u8  always0;        // 置 0 段
         u8  flags;          // 一些标志，文档有解释
         u16 base_hi;        // 中断处理函数地址 31～16 位
-}__attribute__((packed)) idt_entry_t;
+}__packed__ idt_entry_t;
 
 // IDTR
 typedef
 struct idt_ptr_t {
         u16 limit;        // 限长
         u32 base;         // 基址
-} __attribute__((packed)) idt_ptr_t;
+} __packed__ idt_ptr_t;
 
 // 中断描述符表
 static idt_entry_t idt_entries[INTERRUPT_MAX] __attribute__((aligned(16)));

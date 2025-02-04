@@ -54,6 +54,7 @@ DEFINE_PD_INDEXER(T)
 #define PTE_A		0x020	// Accessed
 #define PTE_D		0x040	// Dirty
 #define PTE_PS		0x080	// Page Size
+#define PTE_G		0x100	// Global Page
 
 // Control Register flags
 #define CR0_PE		0x00000001	// Protection Enable

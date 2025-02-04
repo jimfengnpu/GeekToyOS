@@ -1,8 +1,9 @@
     .section .text
+	.code64
 .macro isr_err no
     .globl isr_\no
 isr_\no:
-    pushq   \no
+    pushq   $\no
     jmp    interrupt_common
 .endm
 
@@ -10,14 +11,14 @@ isr_\no:
     .globl isr_\no
 isr_\no:
     pushq   $0
-    pushq   \no
+    pushq   $\no
     jmp    interrupt_common
 .endm
 
 .macro isr_irq no
     .globl isr_\no
 isr_\no:
-    pushq	\no
+    pushq	$\no
     jmp interrupt_common
 .endm
 
@@ -31,7 +32,7 @@ batch_irq	%(\from + 1) ,\to
 
 .altmacro
 .macro batch_isr_func from, to
-.quad   \from
+.quad   isr_\from
 .if \to-\from
 batch_isr_func	%(\from + 1) ,\to
 .endif
@@ -107,5 +108,5 @@ interrupt_common:
 	popq	%rdx
 	popq	%rsi
 	popq	%rdi
-	add $8, %rsp               // 清理栈里的 error code 和 ISR
-	iret
+	addq	$8, %rsp               // 清理栈里的 error code 和 ISR
+	iretq

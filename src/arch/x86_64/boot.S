@@ -62,7 +62,7 @@ tag_addr:
 tag_frame_buffer:
         .align 8
         .short MULTIBOOT_HEADER_TAG_FRAMEBUFFER
-        .short 0
+        .short 1
         .long 20
         .long 1920
         .long 1080
@@ -187,7 +187,7 @@ start:
         mov     %eax, %cr0
         
         # set up GDT
-        mov     $gdt64_ptr, %eax
+        mov     $gdt64_ptr32, %eax
         lgdt    (%eax)
 
         # enter long mode by enabling EFER.LME
@@ -209,12 +209,14 @@ start:
         jmp     .loop
         .code64
 .long_mode:
+        mov     $gdt64_ptr64, %rax
+        lgdt    (%rax)
         mov     $(KERN_BASE), %rax
         addq  %rax, %rsp
         jmp boot_main
         .align 0x10
         # global segment descriptor table
-        .globl gdt64, gdt64_ptr
+        .globl gdt64, gdt64_ptr32
 gdt64:
         .quad 0 # first one must be zero
 gdt64_kcode:
@@ -232,9 +234,12 @@ gdt64_tss:
         .short 0
         .long 0x00008900
         .quad 0
-gdt64_ptr:
-        .short gdt64_ptr - gdt64 - 1    # GDT limit
+gdt64_ptr32:
+        .short gdt64_ptr32 - gdt64 - 1    # GDT limit
         .long gdt64                     # GDT Addr
+gdt64_ptr64:
+        .short gdt64_ptr32 - gdt64 - 1    # GDT limit
+        .quad gdt64 + KERN_BASE           # GDT Addr
         .section ".init.bss", "w", @nobits
         .align 0x1000
 stack:

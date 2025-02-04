@@ -1,6 +1,7 @@
 #include <cpu.h>
 #include <trap.h>
 #include <protect.h>
+#include <apic.h>
 #include <interrupt.h>
 #include <kernel/interrupt.h>
 
@@ -9,6 +10,8 @@
 
 #define IO_PIC1C  (IO_PIC1+1)
 #define IO_PIC2C  (IO_PIC2+1)
+
+static int apic_init_ok;
 
 void pic_init(void)
 {
@@ -39,7 +42,7 @@ void pic_init(void)
         outb(IO_PIC2C, 0x01);
         
         // 暂时先关闭
-        // todo: 多核 使用APIC接管中断
+        // 如果支持，使用APIC接管中断
         outb(IO_PIC1C, 0xFF);
         outb(IO_PIC2C, 0xFF);
 }
@@ -54,14 +57,14 @@ struct idt_entry_t {
         u16 base_mid;        // 中断处理函数地址 31～16 位
         u32 bash_hi;
         u32 __zero;
-}__attribute__((packed)) idt_entry_t;
+} __packed__ idt_entry_t;
 
 // IDTR
 typedef
 struct idt_ptr_t {
         u16 limit;        // 限长
         addr_t base;         // 基址
-} __attribute__((packed)) idt_ptr_t;
+} __packed__ idt_ptr_t;
 
 
 // 中断描述符表
@@ -99,7 +102,7 @@ void init_idt(void)
 {
 
     idt_ptr.limit = sizeof(idt_entry_t) * INTERRUPT_MAX - 1;
-    idt_ptr.base = (addr_t)&idt_entries;
+    idt_ptr.base = (addr_t)idt_entries;
 
     u32 vec = 0;
     for(;vec < 256; vec++)
@@ -151,8 +154,8 @@ static void exception_handler(trapframe_t *frame)
 		case INT_PAGE_FAULT:
 			__builtin_unreachable();
 			break;
-		// case IRQ_NMI:
-		// 	int_no = 2;
+		case IRQ_NMI:
+			int_no = 2;
 			// fallthrough
 		default:
 			panic(
@@ -176,34 +179,38 @@ void init_exceptions(void)
 	// register_interrupt_handler(IRQ_NMI, ISR_EXCEPTION, exception_handler);
 }
 
-void interrupt_init(void)
+void arch_interrupt_init(void)
 {
-    pic_init();
     init_idt();
     init_exceptions();
     // 更新设置中断描述符表
     asm volatile(
         "lidt (%0)"::"r"(&idt_ptr)
     );
-
-}
-// 调用中断处理函数
-void interrupt_handler(trapframe_t *frame)
-{
-    struct isr_info* info = &interrupt_handlers[frame->int_no];
-    cprintf("int: %d", frame->int_no);
-    if (info->handler)
-    {
-        info->handler(frame);
+    pic_init();
+    if(apic_init()){
+        apic_init_ok = 1;
     }
 }
 
-void enable_irq(u8 irq)
+void lapic_eoi(u8 vec);
+void interrupt_eoi(u8 vec)
 {
-
+    if (apic_init_ok) {
+        lapic_eoi(vec);
+    }
 }
 
-void disable_irq(u8 irq)
+void interrupt_enable_irq(u8 irq)
 {
+    if (apic_init_ok) {
+        ioapic_unmask(ioapic_isa_to_gsi(irq));
+    }
+}
 
+void interrupt_disable_irq(u8 irq)
+{
+    if (apic_init_ok) {
+        ioapic_mask(ioapic_isa_to_gsi(irq));
+    }
 }

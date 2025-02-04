@@ -53,6 +53,28 @@ static inline void interrupt_disable()
 	asm volatile ("cli");
 }
 
+static inline u64 msr_read(u64 msr)
+{
+	u32 low, high;
+	asm volatile (
+		"rdmsr"
+		: "=a"(low), "=d"(high)
+		: "c"(msr)
+	);
+	return ((u64)high << 32) | low;
+}
+
+static inline void msr_write(u64 msr, u64 value)
+{
+	u32 low = value & 0xFFFFFFFF;
+	u32 high = value >> 32;
+	asm volatile (
+		"wrmsr"
+		:
+		: "c"(msr), "a"(low), "d"(high)
+	);
+}
+
 enum{
 	// 0x1, edx
     FEAT_X86_FPU          =  0,

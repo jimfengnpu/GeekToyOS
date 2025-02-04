@@ -46,7 +46,22 @@ typedef struct Trapframe
 #define INT_MACHINE_CHECK 18
 #define INT_SIMD_FLOAT 19
 
+#define IRQ_BASE   32
+#define IRQ_SPURIOUS 0xFF
+u8 ioapic_isa_to_gsi(u8 isa);
+u8 ioapic_gsi_to_isa(u8 gsi);
+#define IRQ_TO_GSI(irq) (ioapic_isa_to_gsi(irq))
+#define INT_TO_IRQ(vec) (ioapic_gsi_to_isa((vec) - IRQ_BASE))
+#define IRQ_TO_INT(irq) (ioapic_isa_to_gsi(irq) + IRQ_BASE)
 
+#define IRQ_LINT_BASE (IRQ_SPURIOUS - 3) // 252, One for each LINT pin, one for timer
+#define IRQ_LINT_TIMER (IRQ_LINT_BASE + 2) // 254
+#define IRQ_NMI (IRQ_LINT_BASE - 1) // 251
+
+#define IRQ_IPI_TOP (IRQ_NMI - 1) // 250
+#define IRQ_IPI_ABORT (IRQ_IPI_TOP - 0) // 250
+#define IRQ_IPI_TLB_SHOOTDOWN (IRQ_IPI_TOP - 1) //249
+#define IRQ_IPI_SCHED_HINT (IRQ_IPI_TOP - 2) //248
 // // 定义IRQ
 // #define IRQ0 32  // 电脑系统计时器
 // #define IRQ1 33  // 键盘
@@ -66,6 +81,8 @@ typedef struct Trapframe
 // #define IRQ15 47 // IDE1 传输控制使用
 
 // 初始化中断
-void interrupt_init(void);
-
+void arch_interrupt_init(void);
+void interrupt_eoi(u8 irq);
+void interrupt_enable_irq(u8 irq);
+void interrupt_disable_irq(u8 irq);
 #endif

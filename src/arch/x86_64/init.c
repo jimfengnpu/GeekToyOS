@@ -6,7 +6,6 @@
 
 extern char pgd[];
 extern pgd_t *kernel_pgd; // in x86_64/mm.c
-void map_kernel_page();
 struct cpu_feature feature;
 
 void fetch_cpu_feature()
@@ -35,7 +34,6 @@ void boot_start()
     fetch_cpu_feature();
     // clear low page
     kernel_pgd[0] = 0;
-    interrupt_init();
     kernel_main();
 }
 
