@@ -1,5 +1,6 @@
 #include <lib/string.h>
 #include <drivers/acpi.h>
+#include <kernel/mm.h>
 #include <kernel/multiboot2.h>
 
 
@@ -19,9 +20,9 @@ int acpi_init()
     struct rsdp* rsdp = (struct rsdp*)tag->rsdp;
     acpi_revision = rsdp->revision;
     if (rsdp->revision == 0) {
-        acpi_sdt_header = kaddr(rsdp->rsdt_address);
+        acpi_sdt_header = arch_kmap(rsdp->rsdt_address, PGSIZE);
     }else {
-        acpi_sdt_header = kaddr(rsdp->xsdt_address);
+        acpi_sdt_header = arch_kmap(rsdp->xsdt_address, PGSIZE);
     }
     return 1;
 }
@@ -34,14 +35,15 @@ static struct acpi_header *acpi_iter(int (*acpi_handler)(struct acpi_header*, co
     addr_t table_end = (u8*)acpi_sdt_header + acpi_sdt_header->length;
     if (acpi_revision) {
         for_ptr_entry(u64, entry, table_start, table_end){
-            struct acpi_header *table = kaddr(*entry);
+            struct acpi_header *table = arch_kmap(*entry, PGSIZE);
             if(acpi_handler(table, arg)){
                 return table;
             }
         }
     }else {
         for_ptr_entry(u32, entry, table_start, table_end){
-            struct acpi_header *table = kaddr(*entry);
+            debug("table addr:%lx ", *entry);
+            struct acpi_header *table = arch_kmap(*entry, PGSIZE);
             if(acpi_handler(table, arg)){
                 return table;
             }

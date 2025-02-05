@@ -23,7 +23,7 @@
 #define APIC_REG_ISR_BASE 0x100U
 
 struct lapic_info lapic_list[MAX_LAPICS];
-struct madt_entry_ioapic *ioapic_list[MAX_IOAPICS];
+struct ioapic_info ioapic_list[MAX_IOAPICS];
 struct madt_entry_override *override_list[MAX_OVERRIDES];
 struct madt_entry_nmi *nmi_list[MAX_NMIS];
 size_t lapic_list_size;
@@ -49,9 +49,11 @@ static void add_ioapic(struct madt_entry_ioapic *entry)
 {
 	if (ioapic_list_size >= MAX_IOAPICS)
 		return;
-	ioapic_list[ioapic_list_size++] = entry;
-	arch_kmap(entry->phys_addr, PGSIZE);
-	klog("APIC: Detected I/O APIC at %p, id %d\n", (void *)(addr_t)kaddr(entry->phys_addr), entry->apic_id);
+	ioapic_list[ioapic_list_size].id = entry->apic_id;
+	ioapic_list[ioapic_list_size].gsi_base = entry->gsi_base;
+	ioapic_list[ioapic_list_size].base = arch_kmap(entry->phys_addr, PGSIZE);
+	klog("APIC: Detected I/O APIC at %p, id %d\n", (void *)(addr_t)entry->phys_addr, entry->apic_id);
+	ioapic_list_size++;
 }
 
 static void add_override(struct madt_entry_override *entry)
@@ -122,7 +124,7 @@ static inline u32 lapic_read(u32 reg_offset)
 	return *(volatile u32 *)((uintptr_t)lapic_base + reg_offset);
 }
 
-static inline struct lapic_info *find_lapic(uint8_t id)
+static inline struct lapic_info *find_lapic(u8 id)
 {
 	for (size_t i = 0; i < lapic_list_size; i++)
 		if (lapic_list[i].id == id)
@@ -130,7 +132,7 @@ static inline struct lapic_info *find_lapic(uint8_t id)
 	return NULL;
 }
 
-static inline void lapic_set_nmi(uint8_t vec, struct madt_entry_nmi *nmi_info)
+static inline void lapic_set_nmi(u8 vec, struct madt_entry_nmi *nmi_info)
 {
 	u32 nmi = 800 | vec;
 	if (nmi_info->flags & 2)
@@ -157,12 +159,10 @@ u32 lapic_timer_prepare(void)
 	lapic_write(APIC_REG_TIMER_DIVIDE, 0x3);
 	lapic_write(APIC_REG_TIMER_INITIAL, ticks_initial);
 	clock_sleep(test_ms * HZ / 1000);
-	// pit_sleep_ms(test_ms); // TODO: Use interrupts for better accuracy (might be tricky getting interrupts with SMP)
 
 	lapic_write(APIC_REG_TIMER_LVT, APIC_DISABLE);
 
 	u32 ticks_per_10ms = (ticks_initial - lapic_read(APIC_REG_TIMER_CURRENT)) / (test_ms / 10);
-	// u32 ticks_per_10ms = 625000;
 	klog("LAPIC:test tick/10ms:%d\n", ticks_per_10ms);
 	
 	return ticks_per_10ms;
@@ -214,7 +214,7 @@ void lapic_eoi(u8 vec)
 
 }
 
-void lapic_send_ipi(uint8_t target, u32 flags)
+void lapic_send_ipi(u8 target, u32 flags)
 {
 	if (lapic_base == NULL)
 		panic("Tried to send IPI before LAPIC was initialized");
@@ -245,16 +245,15 @@ static inline void ioapic_write(volatile u32 *ioapic, u8 reg, u32 data)
 
 static inline u32 get_max_redirs(size_t ioapic_id)
 {
-	addr_t base = kaddr(ioapic_list[ioapic_id]->phys_addr);
-	return (ioapic_read(base, IOAPIC_REG_VER) & 0xFF0000) >> 16;
+	return (ioapic_read(ioapic_list[ioapic_id].base, IOAPIC_REG_VER) & 0xFF0000) >> 16;
 }
 
-static struct madt_entry_ioapic *gsi_to_ioapic(u32 gsi)
+static struct ioapic_info *gsi_to_ioapic(u32 gsi)
 {
 	for (size_t i = 0; i < ioapic_list_size; i++) {
 		u32 max_redirs = get_max_redirs(i);
-		if (ioapic_list[i]->gsi_base <= gsi && ioapic_list[i]->gsi_base + max_redirs > gsi)
-			return ioapic_list[i];
+		if (ioapic_list[i].gsi_base <= gsi && ioapic_list[i].gsi_base + max_redirs > gsi)
+			return &ioapic_list[i];
 	}
 	panic("I/O APIC not found for GSI %u", gsi);
 	return NULL;
@@ -276,8 +275,8 @@ static void ioapic_redtbl_write(addr_t ioapic_base, u8 irq_line, u64 value)
 void ioapic_redirect(u32 gsi, u8 source, u16 flags, u8 target_apic)
 {
 	u8 target_apic_id = lapic_list[target_apic].id;
-	struct madt_entry_ioapic *ioapic = gsi_to_ioapic(gsi);
-	addr_t ioapic_base = kaddr(ioapic->phys_addr);
+	struct ioapic_info *ioapic = gsi_to_ioapic(gsi);
+	addr_t ioapic_base = ioapic->base;
 
 	u64 redirection = gsi + IRQ_BASE;
 	if (flags & 2)
@@ -292,22 +291,20 @@ void ioapic_redirect(u32 gsi, u8 source, u16 flags, u8 target_apic)
 void ioapic_mask(u32 gsi)
 {
 	// spin_lock(&ioapic_lock);
-	struct madt_entry_ioapic *ioapic = gsi_to_ioapic(gsi);
-	addr_t ioapic_base = kaddr(ioapic->phys_addr);
+	struct ioapic_info *ioapic = gsi_to_ioapic(gsi);
 	u8 irq_line = gsi - ioapic->gsi_base;
-	u64 prev = ioapic_redtbl_read(ioapic_base, irq_line);
-	ioapic_redtbl_write(ioapic_base, irq_line, prev | APIC_IRQ_MASK);
+	u64 prev = ioapic_redtbl_read(ioapic->base, irq_line);
+	ioapic_redtbl_write(ioapic->base, irq_line, prev | APIC_IRQ_MASK);
 	// spin_unlock(&ioapic_lock);
 }
 
 void ioapic_unmask(u32 gsi)
 {
 	// spin_lock(&ioapic_lock);
-	struct madt_entry_ioapic *ioapic = gsi_to_ioapic(gsi);
-	addr_t ioapic_base = kaddr(ioapic->phys_addr);
+	struct ioapic_info *ioapic = gsi_to_ioapic(gsi);
 	u8 irq_line = gsi - ioapic->gsi_base;
-	u64 prev = ioapic_redtbl_read(ioapic_base, irq_line);
-	ioapic_redtbl_write(ioapic_base, irq_line, prev & (~APIC_IRQ_MASK));
+	u64 prev = ioapic_redtbl_read(ioapic->base, irq_line);
+	ioapic_redtbl_write(ioapic->base, irq_line, prev & (~APIC_IRQ_MASK));
 	// spin_unlock(&ioapic_lock);
 }
 

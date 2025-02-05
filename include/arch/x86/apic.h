@@ -69,10 +69,16 @@ struct madt_entry_lapic_addr {
 } __packed__;
 
 struct lapic_info {
-	uint8_t id;
-	uint8_t acpi_id;
-	uint8_t present;
-	uint32_t ticks_per_10ms;
+	u8 id;
+	u8 acpi_id;
+	u8 present;
+	u32 ticks_per_10ms;
+};
+
+struct ioapic_info {
+	u8 id;
+	u32 gsi_base;
+	addr_t base;
 };
 
 int apic_init(void);

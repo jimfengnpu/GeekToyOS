@@ -48,8 +48,8 @@ void mboot_info_show()
                     mmap = (multiboot_memory_map_t *) 
                     ((unsigned long) mmap + ((struct multiboot_tag_mmap *) tag)->entry_size))
                 {
-                    debug(" base_addr = 0x%lx,"
-                        " length = 0x%lx, type = 0x%x\n",
+                    debug(" base_addr = 0x%llx,"
+                        " length = 0x%llx, type = 0x%x\n",
                         mmap->addr, mmap->len,
                         (unsigned) mmap->type);
                 }

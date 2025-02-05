@@ -8,16 +8,9 @@
  * Print a number (base <= 16) in reverse order,
  * using specified putch function and associated pointer putdat.
  */
-// change due to gcc __divdi3(ull, u32) failed, so just write one for u long long
-
-static u64 udiv(unsigned long long num, unsigned div, unsigned *rem)
-{
-	// quot = (num * 2^n)/(div * 2^n)
-
-}
 
 static void printnum(void (*putch)(int, void*), void *putdat,
-	unsigned long num, unsigned base, int width, int padc)
+	unsigned long long num, unsigned base, int width, int padc)
 {
 	// first recursively print all preceding (more significant) digits
 	if (num >= base) {
@@ -186,7 +179,7 @@ void vprintfmt(void (*putch)(int, void*), void *putdat, const char *fmt, va_list
 				case 0: num = va_arg(ap, unsigned int); break;// %u/d
 				case 1: num = va_arg(ap, unsigned long); break;// %l
 				case 2: num = va_arg(ap, unsigned long long); break;// %ll
-				case 3: num = (unsigned long long)va_arg(ap, void *); break;// %p
+				case 3: num = (unsigned long)va_arg(ap, void *); break;// %p
 				default:
 					break;
 			}

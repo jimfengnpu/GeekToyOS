@@ -152,9 +152,12 @@ void arch_map_kernel_page(addr_t max_phy_addr)
 }
 
 addr_t arch_kmap(addr_t phy, size_t sz) {
+    size_t pgoff = PGOFF(phy);
+    phy = PTADDR(phy);
     addr_t va = kaddr(phy);
-    arch_map_region(NULL, va, phy, sz, PTE_W);
-    return va;
+    if(check_pgtable(va) != phy)
+        arch_map_region(NULL, va, phy, sz, PTE_W);
+    return va + pgoff;
 }
 
 void arch_kunmap(addr_t va) {
