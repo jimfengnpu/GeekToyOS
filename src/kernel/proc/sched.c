@@ -2,7 +2,7 @@
 #include <kernel/clock.h>
 
 void sched_handler(trapframe_t *frame){
-	if(ticks % 100 == 0){
+	if(ticks % HZ == 0){
 		info("sc ");
 	}
 }

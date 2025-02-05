@@ -70,6 +70,9 @@ for (mmap = ((struct multiboot_tag_mmap *) tag)->entries;   \
 void mem_map_init()
 {
     struct multiboot_tag *tag = mboot_get_mboot_info(MULTIBOOT_TAG_TYPE_MMAP);
+    if(tag == NULL){
+        error("no multiboot memmap");
+    }
     multiboot_memory_map_t *mmap;
     // first iter, get max phy page size
     for_mmap(mmap, tag)

@@ -1,3 +1,4 @@
+#include <cpu.h>
 #include <kernel/clock.h>
 #include <kernel/interrupt.h>
 #include <lib/time.h>
@@ -10,18 +11,18 @@ static int clock_type; // 1 for hpet, 0 for 8253/8254PIT
 #define RTC_DATA	0x71
 
 /* rtc */
-u8 readRTC(int addr){
+static inline u8 readRTC(int addr){
 	//*** must disable int and ***
 	outb(RTC_ADDR, addr);
 	return inb(RTC_DATA);
 }
 
-int bcd2byte(u8 x){
+static inline int bcd2byte(u8 x){
 	return ((x>>4)&0xF)*10 + (x & 0xF);
 }
 
 // ** must ** disable int
-void get_rtc_datetime(struct tm* time){
+void rtc_get_datetime(struct tm* time){
 	int year, mon, day, hour, min, sec;
 	do{
 		year = readRTC(0x9);
@@ -52,7 +53,7 @@ void get_rtc_datetime(struct tm* time){
 
 u32 arch_get_hw_timestamp(){
 	struct tm time = {0};
-	get_rtc_datetime(&time);
+	rtc_get_datetime(&time);
 	return mktime(&time);
 }
 

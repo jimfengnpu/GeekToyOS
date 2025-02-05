@@ -140,3 +140,8 @@ _found:
     }
     return (found_byte << 3) + pos;
 }
+
+int bitmap_alloc(struct bitmap *map, int value, size_t sz) 
+{
+    
+}

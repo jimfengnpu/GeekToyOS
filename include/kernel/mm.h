@@ -41,7 +41,7 @@ struct zone {
 #define PFN_NOTFOUND    ((size_t)-1)
 // virtual(linear) mem struct:
 
-struct mm_struct {
+struct task_mm {
     pgd_t *pgd;
 };
 

@@ -30,7 +30,7 @@ void _klog(const char *, int, int, const char *fmt, ...);
 #define debug(...) _klog(__FILENAME__, __LINE__, LOG_DEBUG, __VA_ARGS__)
 #define warning(...) _klog(__FILENAME__, __LINE__, LOG_WARNING, __VA_ARGS__)
 #define error(...) _klog(__FILENAME__, __LINE__, LOG_ERROR, __VA_ARGS__)
-#define klog(...) _klog(__FILENAME__, __LINE__, LOG_INFO, __VA_ARGS__)
+#define klog(...) _klog(__FILENAME__, __LINE__, LOG_DEBUG, __VA_ARGS__)
 void _panic(const char *, int, const char *fmt, ...);
 #define panic(...) _panic(__FILENAME__, __LINE__, __VA_ARGS__)
 

@@ -8,15 +8,15 @@ void kernel_main()
 {
     mboot_info_init();
     mem_init();
-    // halt();
     console_init();
     mboot_info_show();
+    
     mm_init();
     acpi_init();
     interrupt_init();
     clock_init();
     interrupt_enable();
-
+    
     cprintf("Hello GeekToyOS!\n");
     sched_start();
     while(1)halt();

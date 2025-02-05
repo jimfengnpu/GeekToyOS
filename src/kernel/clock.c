@@ -21,9 +21,7 @@ void clock_handler(trapframe_t *frame)
 		if(tm_time.tm_sec % 5== 0)
 		info("%s\n", strtime);
 	}
-	
 	//wakeup(&ticks);
-
 }
 
 // void arch_clock_start(void); 

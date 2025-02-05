@@ -150,3 +150,15 @@ void arch_map_kernel_page(addr_t max_phy_addr)
     }
     arch_map_region(NULL, kaddr(PHY_BOOT_BASE), PHY_BOOT_BASE, max_phy_addr - PHY_BOOT_BASE, PTE_W|PTE_G);
 }
+
+addr_t arch_kmap(addr_t phy, size_t sz) {
+    addr_t va = kaddr(phy);
+    arch_map_region(NULL, va, phy, sz, PTE_W);
+    return va;
+}
+
+void arch_kunmap(addr_t va) {
+    addr_t pa;
+    pte_t *pte = pgdir_walk(kernel_pgd, va, &pa, 0);
+    *pte = 0;
+}

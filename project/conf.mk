@@ -11,6 +11,13 @@ ifeq ($(GRUB_TARGET),x86_64-pc)
 	$(error "no such target:$(GRUB_TARGET)")
 endif
 
+ARCH_PREFIX=$(ARCH)
+ifeq ($(ARCH), i386)
+ARCH_PREFIX+= x86
+else ifeq ($(ARCH), x86_64)
+ARCH_PREFIX+= x86
+endif
+
 OS_NAME=GeekToyOS
 #virtual mode
 INSTALL_MODE=virtual
@@ -20,10 +27,10 @@ ISO_FILE=$(OS_NAME).iso
 DEBUG_MODE=1
 
 # basic dir and file
-INC_DIRS=include/ include/arch/$(ARCH)/ include/arch/
+INC_DIRS=include/ $(addprefix include/arch/,$(ARCH_PREFIX)) include/arch/
 OBJDIR=obj
 SRCDIR=src
-KERNEL_SRC_DIRS=arch/$(ARCH) kernel kernel/* drivers fs
+KERNEL_SRC_DIRS=$(addprefix arch/,$(ARCH_PREFIX)) kernel kernel/* drivers fs
 LIB_SRC_DIR=lib
 KERNEL_FILE=$(OBJDIR)/kernel.bin
 LIB_FILE=$(OBJDIR)/libc.a
@@ -34,9 +41,9 @@ LD=ld
 ASM=as
 AR=ar
 PERL=perl
-CFLAGS= -c -mno-sse -mno-mmx -mno-red-zone -fno-stack-protector -ffreestanding -fno-pic -Wall -Wextra -std=gnu99 $(addprefix -I,$(INC_DIRS)) -lgcc
-CFLAGS+= -DARCH=$(ARCH)
-LDFLAGS = -nostdlib -z noexecstack -T $(OBJDIR)/$(PROJECT_DIR)/kernel.ld 
+CFLAGS= -c -lgcc -mno-sse -mno-mmx -mno-red-zone -fno-stack-protector -ffreestanding -fno-pic -Wall -Wextra -std=gnu99 $(addprefix -I,$(INC_DIRS))
+CFLAGS+= -DARCH_$(ARCH)
+LDFLAGS = -z noexecstack -T $(OBJDIR)/$(PROJECT_DIR)/kernel.ld
 ASMFLAGS = $(addprefix -I,$(INC_DIRS))
 OBJCOPYFLAGS = 
 

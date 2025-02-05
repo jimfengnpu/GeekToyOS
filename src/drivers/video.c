@@ -86,12 +86,11 @@ int screen_init()
     if (tag == NULL) {
         return 0;
     }
-    screen_info.base = kaddr(tag->common.framebuffer_addr);
     screen_info.bpp = div_round_up(tag->common.framebuffer_bpp, 8);
     screen_info.height = tag->common.framebuffer_height;
     screen_info.width = tag->common.framebuffer_width;
     screen_info.pitch = tag->common.framebuffer_pitch;
-    arch_map_region(NULL, screen_info.base, tag->common.framebuffer_addr, align(screen_info.pitch*screen_info.height, PGSIZE), PTE_W | PTE_G);
+    screen_info.base = arch_kmap(tag->common.framebuffer_addr, align(screen_info.pitch*screen_info.height, PGSIZE));
     switch (tag->common.framebuffer_type)
     {
     case MULTIBOOT_FRAMEBUFFER_TYPE_RGB:

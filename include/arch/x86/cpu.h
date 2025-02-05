@@ -2,7 +2,6 @@
 #define X86_CPU_H
 #include <lib/types.h>
 
-
 #define DEFINE_IO(bwl, bw, type)						\
 static inline void out##bwl(int port, type value)		\
 {									\
@@ -26,7 +25,7 @@ static inline void pause(void)
 	__builtin_ia32_pause();
 }
 
-static inline void halt()
+static inline void halt(void)
 {
     asm volatile ("hlt": : :"memory");
 }
@@ -53,7 +52,7 @@ static inline void interrupt_disable()
 	asm volatile ("cli");
 }
 
-static inline u64 msr_read(u64 msr)
+static inline u64 msr_read(u32 msr)
 {
 	u32 low, high;
 	asm volatile (
@@ -64,7 +63,7 @@ static inline u64 msr_read(u64 msr)
 	return ((u64)high << 32) | low;
 }
 
-static inline void msr_write(u64 msr, u64 value)
+static inline void msr_write(u32 msr, u64 value)
 {
 	u32 low = value & 0xFFFFFFFF;
 	u32 high = value >> 32;
@@ -172,5 +171,7 @@ static inline void cpuid(u32 code, u32 *a, u32 *b, u32 *c, u32 *d) {
 	if(c)*c=cx;
 	if(d)*d=dx;
 }
+
+int check_cpu_feature(int type);
 
 #endif

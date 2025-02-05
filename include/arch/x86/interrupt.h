@@ -1,27 +1,9 @@
 #ifndef X86_INTERRUPT_H
 #define X86_INTERRUPT_H
 #include <lib/types.h>
+#include <context.h>
 // 中断保存的寄存器类型
-typedef struct Trapframe
-{
-    u64 r11;
-    u64 r10;
-    u64 r9;
-    u64 r8;
-    u64 rax;
-    u64 rcx;
-    u64 rdx;
-    u64 rsi;
-    u64 rdi;
-    u64 int_no;
-    u64 err_code;
-    u64 rip;
-    u64 cs;
-    u64 rflags;
-    // x86_64无论是否发生了特权级切换CPU都会压栈
-    u64 rsp;
-    u64 ss;
-} trapframe_t;
+typedef struct cpu_context trapframe_t;
 
 #define INTERRUPT_MAX 256
 // 中断号定义
@@ -45,6 +27,10 @@ typedef struct Trapframe
 #define INT_ALIGNMENT 17
 #define INT_MACHINE_CHECK 18
 #define INT_SIMD_FLOAT 19
+
+#if ARCH_i386
+#define INT_SYSCALL 128
+#endif
 
 #define IRQ_BASE   32
 #define IRQ_SPURIOUS 0xFF

@@ -91,8 +91,7 @@ int hpet_init()
     if(header == NULL){
         return 0;
     } 
-    hpet_base = kaddr(header->address.address);
-    arch_map_region(NULL, hpet_base, paddr(hpet_base), PGSIZE, PTE_W|PTE_G);
+    hpet_base = arch_kmap(header->address.address, PGSIZE);
     u64 cap = hpet_read(HPET_REG_CAP);
     size_t period = HPET_CAP_PERIOD(cap);
     size_t target_cmp = 1000000000000000UL /(period * HZ);
@@ -119,7 +118,7 @@ int hpet_init()
             hpet_read(HPET_REG_TIMER(i) + HPET_TIMER_CNF_CAP) & (~HPET_TIMER_CNF_ENABLE));
     }
     if (valid_timer == -1) {
-        info("HPET:no valid period timer, fallback using pit clock\n");
+        klog("HPET:no valid period timer, fallback using pit clock\n");
         return 0;
     }
     return 1;

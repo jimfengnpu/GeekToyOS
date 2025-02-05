@@ -1,3 +1,4 @@
+#include <cpu.h>
 #include <apic.h>
 #include <kernel/interrupt.h>
 #include <kernel/clock.h>
@@ -49,7 +50,7 @@ static void add_ioapic(struct madt_entry_ioapic *entry)
 	if (ioapic_list_size >= MAX_IOAPICS)
 		return;
 	ioapic_list[ioapic_list_size++] = entry;
-    arch_map_region(NULL, kaddr(entry->phys_addr), entry->phys_addr, PGSIZE, PTE_W|PTE_G);
+	arch_kmap(entry->phys_addr, PGSIZE);
 	klog("APIC: Detected I/O APIC at %p, id %d\n", (void *)(addr_t)kaddr(entry->phys_addr), entry->apic_id);
 }
 
@@ -75,7 +76,7 @@ static void add_nmi(struct madt_entry_nmi *entry)
 static void parse_madt(struct acpi_madt *madt)
 {
 	// Default LAPIC address (might be overridden by entry type 5)
-	addr_t tmp_lapic_base = kaddr(madt->lapic_address);
+	addr_t tmp_lapic_base = madt->lapic_address;
 
 	// Parse all the other entries
 	struct madt_entry_header *hd = (struct madt_entry_header *)&madt->entries;
@@ -96,7 +97,7 @@ static void parse_madt(struct acpi_madt *madt)
 				add_nmi((struct madt_entry_nmi *)hd);
 				break;
 			case MADT_LAPIC_ADDR:
-				tmp_lapic_base = kaddr(((struct madt_entry_lapic_addr *)hd)->lapic_addr);
+				tmp_lapic_base = ((struct madt_entry_lapic_addr *)hd)->lapic_addr;
 				break;
 			default:
 				warning("APIC: Unrecognised entry type %d in MADT\n", hd->type);
@@ -106,25 +107,9 @@ static void parse_madt(struct acpi_madt *madt)
 	}
 
 	lapic_base = tmp_lapic_base;
+	lapic_base = arch_kmap(lapic_base, PGSIZE);
 	klog("APIC: Local APIC base: %p, Detected %d CPUs\n", 
 		lapic_base, lapic_list_size);
-    arch_map_region(NULL, lapic_base, paddr(lapic_base), PGSIZE, PTE_W|PTE_G);
-}
-
-int apic_init(void)
-{
-    if(check_cpu_feature(FEAT_X86_APIC) == 0){
-        return 0;
-    }
-	struct acpi_madt *madt = acpi_find_table("APIC");
-	if (madt == NULL){
-		error("no MADT found in ACPI tables");
-		return 0;
-	}
-	parse_madt(madt);
-	lapic_enable();
-	ioapic_init();
-	return 1;
 }
 
 static inline void lapic_write(u32 reg_offset, u32 data)
@@ -246,15 +231,12 @@ void lapic_send_ipi(uint8_t target, u32 flags)
 
 #define APIC_IRQ_MASK 0x10000
 
-
-// Careful: will race
 static inline u32 ioapic_read(volatile u32 *ioapic, u8 reg)
 {
 	ioapic[0] = (reg & 0xFF);
 	return ioapic[4];
 }
 
-// Careful: will race
 static inline void ioapic_write(volatile u32 *ioapic, u8 reg, u32 data)
 {
 	ioapic[0] = (reg & 0xFF);
@@ -275,6 +257,7 @@ static struct madt_entry_ioapic *gsi_to_ioapic(u32 gsi)
 			return ioapic_list[i];
 	}
 	panic("I/O APIC not found for GSI %u", gsi);
+	return NULL;
 }
 
 static u64 ioapic_redtbl_read(addr_t ioapic_base, u8 irq_line)
@@ -358,4 +341,20 @@ void ioapic_init(void)
 		ioapic_redirect(override_list[i]->gsi, override_list[i]->source, override_list[i]->flags, 0);
 		ioapic_mask(override_list[i]->gsi);
 	}
+}
+
+int apic_init(void)
+{
+    if(check_cpu_feature(FEAT_X86_APIC) == 0){
+        return 0;
+    }
+	struct acpi_madt *madt = acpi_find_table("APIC");
+	if (madt == NULL){
+		error("no MADT found in ACPI tables");
+		return 0;
+	}
+	parse_madt(madt);
+	lapic_enable();
+	ioapic_init();
+	return 1;
 }
