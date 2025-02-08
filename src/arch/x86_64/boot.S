@@ -212,11 +212,11 @@ start:
         mov     $gdt64_ptr64, %rax
         lgdt    (%rax)
         mov     $(KERN_BASE), %rax
-        addq  %rax, %rsp
+        addq    %rax, %rsp
         jmp boot_main
         .align 0x10
         # global segment descriptor table
-        .globl gdt64, gdt64_ptr32
+        .globl gdt64, gdt64_ptr32, gdt64_ptr64
 gdt64:
         .quad 0 # first one must be zero
 gdt64_kcode:

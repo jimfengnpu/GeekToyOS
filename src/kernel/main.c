@@ -3,6 +3,7 @@
 #include <kernel/mm.h>
 #include <kernel/sched.h>
 #include <drivers/acpi.h>
+#include <smp.h>
 
 void kernel_main()
 {
@@ -16,11 +17,21 @@ void kernel_main()
     interrupt_init();
     clock_init();
     interrupt_enable();
-    
+    smp_init();
+
     cprintf("Hello GeekToyOS!\n");
     sched_start();
     while(1)halt();
 
+}
+
+void ap_main()
+{
+    interrupt_local_init();
+    interrupt_enable();
+    klog("SMP: cpu %d online\n", smp_cpuid());
+    sched_start();
+    while(1)halt();
 }
 
 void _klog(const char * file, int line, int level, const char *fmt, ...)

@@ -18,6 +18,7 @@
 
 
 void kernel_main();
+void ap_main();
 
 #define __FILE_PREFIX_LEN   4 //  src/
 #define __FILENAME__ (__FILE__ + __FILE_PREFIX_LEN)

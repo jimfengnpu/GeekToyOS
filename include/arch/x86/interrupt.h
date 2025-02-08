@@ -67,7 +67,8 @@ u8 ioapic_gsi_to_isa(u8 gsi);
 // #define IRQ15 47 // IDE1 传输控制使用
 
 // 初始化中断
-void arch_interrupt_init(void);
+void interrupt_init(void);
+void interrupt_local_init(void);
 void interrupt_eoi(u8 irq);
 void interrupt_enable_irq(u8 irq);
 void interrupt_disable_irq(u8 irq);

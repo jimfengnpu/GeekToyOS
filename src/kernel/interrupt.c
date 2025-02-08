@@ -22,8 +22,3 @@ void interrupt_handler(trapframe_t *frame)
         info->handler(frame);
     }
 }
-
-void interrupt_init(void)
-{
-    arch_interrupt_init();
-}

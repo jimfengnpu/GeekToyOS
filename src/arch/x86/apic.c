@@ -150,6 +150,11 @@ u8 lapic_id(void)
 	return lapic_read(APIC_REG_ID) >> 24;
 }
 
+u8 lapic_num(void)
+{
+	return lapic_list_size;
+}
+
 // Returns the number of ticks in 10ms
 u32 lapic_timer_prepare(void)
 {
@@ -351,7 +356,6 @@ int apic_init(void)
 		return 0;
 	}
 	parse_madt(madt);
-	lapic_enable();
 	ioapic_init();
 	return 1;
 }

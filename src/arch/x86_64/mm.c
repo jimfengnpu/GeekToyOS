@@ -84,13 +84,11 @@ addr_t check_pgtable(addr_t vaddr)
     pte_t *pte = pgdir_walk(kernel_pgd, vaddr, &addr, 0);
     if(pte==NULL){
         debug("%lx=> no page\n", vaddr);
-    }else{
-        debug("%lx=> %lx\n", vaddr, addr);
     }
     return addr;
 }
 
-static void __map_region(pgd_t *pgdir, addr_t vaddr, addr_t paddr, size_t size, int perm, int table_level)
+static void __map_region(pgd_t *pgdir, addr_t vaddr, addr_t paddr, size_t size, int attr, int table_level)
 {
     
     u64 pg_size = PGSIZE;// 0x1000
@@ -106,13 +104,13 @@ static void __map_region(pgd_t *pgdir, addr_t vaddr, addr_t paddr, size_t size, 
         pte_t *pte = pgdir_walk(pgdir, addr, NULL, flag);
         // if(pte == NULL){
         // }
-        *pte = paddr | PTE_P | perm | ((table_level)?PTE_PS:0);
+        *pte = paddr | attr | ((table_level)?PTE_PS:0);
         addr += pg_size;
         paddr += pg_size;
     }
 }
 
-void arch_map_region(pgd_t *pgdir, addr_t vaddr, addr_t paddr, size_t size, int perm)
+void arch_map_region(pgd_t *pgdir, addr_t vaddr, addr_t paddr, size_t size, int perm_flag)
 {
     if(pgdir == NULL){
         pgdir = kernel_pgd;
@@ -125,6 +123,11 @@ void arch_map_region(pgd_t *pgdir, addr_t vaddr, addr_t paddr, size_t size, int 
     va_e2 = align_down(vaddr + size, PTSIZE * NPTENTRIES);
     va_end = align(vaddr + size, PGSIZE);
     vaddr = align_down(vaddr, PGSIZE);
+    int flag = perm_flag & (~PG_ATTR_MASK);
+    int perm = perm_flag & (PG_ATTR_MASK);
+    if(!(flag & PG_CLEAR)){
+        perm |= PTE_P;
+    }
     if (va_e1 > va_s1) {
         __map_region(pgdir, vaddr, vaddr - delta, va_s1 - vaddr, perm, 0);
         if (va_e2 > va_s2 && check_cpu_feature(FEAT_X86_Page1GB)) 
@@ -161,7 +164,10 @@ addr_t arch_kmap(addr_t phy, size_t sz) {
 }
 
 void arch_kunmap(addr_t va) {
-    addr_t pa;
-    pte_t *pte = pgdir_walk(kernel_pgd, va, &pa, 0);
-    *pte = 0;
+    return;
+}
+
+void arch_clear_low_page()
+{
+    kernel_pgd[0] = 0;
 }

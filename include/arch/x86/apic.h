@@ -83,6 +83,9 @@ struct ioapic_info {
 
 int apic_init(void);
 
+u8 lapic_num(void);
+u8 lapic_id(void);
 void lapic_eoi(u8);
+
 void ioapic_mask(u32 gsi);
 void ioapic_unmask(u32 gsi);

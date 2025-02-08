@@ -3,6 +3,7 @@
 #include <drivers/video.h>
 #include <kernel/kernel.h>
 #include <kernel/console.h>
+#include <kernel/spinlock.h>
 
 #define CON_SERIAL  1
 #define CON_SCREEN  2
@@ -10,6 +11,7 @@
 
 console_t console;
 u32 console_flag;
+static struct spinlock console_lock;
 
 void kputchar(int ch)
 {
@@ -75,7 +77,9 @@ static void kputch(int ch, int *count)
 int vcprintf(const char *fmt, va_list ap)
 {
     int cnt = 0;
+    acquire(&console_lock);
     vprintfmt(cputch, &cnt, fmt, ap);
+    release(&console_lock);
     return cnt;
 }
 
@@ -92,7 +96,9 @@ int cprintf(const char *fmt, ...)
 int vkprintf(const char *fmt, va_list ap)
 {
     int cnt = 0;
+    acquire(&console_lock);
     vprintfmt(kputch, &cnt, fmt, ap);
+    release(&console_lock);
     return cnt;
 }
 

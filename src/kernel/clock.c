@@ -42,3 +42,12 @@ void clock_sleep(clock_t sleep_tick) {
 		pause();
 	}
 }
+
+void clock_sleep_watch_flag(clock_t sleep_tick, volatile int* flag, int original) {
+	clock_t start = ticks;
+	while(ticks != start + sleep_tick) {
+		pause();
+		if(*flag != original)
+			break;
+	}
+}

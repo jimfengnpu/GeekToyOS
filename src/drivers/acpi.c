@@ -7,6 +7,13 @@
 struct acpi_header* acpi_sdt_header;
 static int acpi_revision;
 
+static addr_t acpi_remap(addr_t phy){
+    struct acpi_header *header = arch_kmap(phy, sizeof(struct acpi_header));
+    size_t sz = header->length;
+    arch_kunmap(header);
+    return arch_kmap(phy, sz);
+} 
+
 int acpi_init()
 {
     struct multiboot_tag_new_acpi *tag = mboot_get_mboot_info(MULTIBOOT_TAG_TYPE_ACPI_NEW);
@@ -19,11 +26,13 @@ int acpi_init()
     }
     struct rsdp* rsdp = (struct rsdp*)tag->rsdp;
     acpi_revision = rsdp->revision;
+    struct acpi_header *sdt;
     if (rsdp->revision == 0) {
-        acpi_sdt_header = arch_kmap(rsdp->rsdt_address, PGSIZE);
+        sdt = rsdp->rsdt_address;
     }else {
-        acpi_sdt_header = arch_kmap(rsdp->xsdt_address, PGSIZE);
+        sdt = rsdp->xsdt_address;
     }
+    acpi_sdt_header = acpi_remap(sdt);
     return 1;
 }
 
@@ -35,18 +44,20 @@ static struct acpi_header *acpi_iter(int (*acpi_handler)(struct acpi_header*, co
     addr_t table_end = (u8*)acpi_sdt_header + acpi_sdt_header->length;
     if (acpi_revision) {
         for_ptr_entry(u64, entry, table_start, table_end){
-            struct acpi_header *table = arch_kmap(*entry, PGSIZE);
+            struct acpi_header *table = acpi_remap(*entry);
             if(acpi_handler(table, arg)){
                 return table;
             }
+            arch_kunmap(table);
         }
     }else {
         for_ptr_entry(u32, entry, table_start, table_end){
             debug("table addr:%lx ", *entry);
-            struct acpi_header *table = arch_kmap(*entry, PGSIZE);
+            struct acpi_header *table = acpi_remap(*entry);
             if(acpi_handler(table, arg)){
                 return table;
             }
+            arch_kunmap(table);
         }
     }
     return NULL;

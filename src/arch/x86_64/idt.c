@@ -23,7 +23,7 @@ struct idt_ptr_t {
 
 
 // 中断描述符表
-static idt_entry_t idt_entries[INTERRUPT_MAX] __attribute__((aligned(16)));
+idt_entry_t idt_entries[INTERRUPT_MAX] __attribute__((aligned(16)));
 
 // IDTR
 static idt_ptr_t idt_ptr;
@@ -51,6 +51,14 @@ static void idt_set_gate(u8 num, addr_t base, u8 flags)
     idt_entries[num].flags = flags;
 }
 
+void idt_load(void)
+{
+    // 更新设置中断描述符表
+    asm volatile(
+        "lidt (%0)"::"r"(&idt_ptr)
+    );
+}
+
 // 初始化中断描述符表
 void idt_init(void)
 {
@@ -65,8 +73,5 @@ void idt_init(void)
     }
     idt_entries[INT_DOUBLE_FAULT].ist = IST_DOUBLE_FAULT;
     idt_entries[INT_NMI].ist = IST_NMI;
-    // 更新设置中断描述符表
-    asm volatile(
-        "lidt (%0)"::"r"(&idt_ptr)
-    );
+    idt_load();
 }

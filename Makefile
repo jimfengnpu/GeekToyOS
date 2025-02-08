@@ -30,11 +30,11 @@ install: $(KERNEL_FILE) $(IMG_FILE)
 
 iso: $(ISO_FILE)
 
-run: $(IMG_FILE)
-	$(QEMU) -hda $(IMG_FILE) $(QEMU_OPT) -serial file:kernel.log  -device VGA -monitor stdio -d cpu_reset -D qemu.log -M q35
+run: $(ISO_FILE)
+	$(QEMU) -cdrom $(ISO_FILE) $(QEMU_OPT) -d int -D qemu.log
 
-gdb: $(IMG_FILE)
-	$(QEMU) -hda $(IMG_FILE) $(QEMU_OPT) -serial file:kernel.log  -device VGA -monitor stdio -d cpu_reset -D qemu.log -gdb tcp::1234 -S
+gdb: $(ISO_FILE)
+	$(QEMU) -cdrom $(ISO_FILE) $(QEMU_OPT)  -gdb tcp::1234 -S -d int -D qemu.log
 
 dump_kernel:
 	objdump -D $(KERNEL_FILE) > $(OBJDIR)/kernel.txt

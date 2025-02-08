@@ -13,6 +13,12 @@
 
 static int apic_init_ok;
 
+// apic.c
+void lapic_eoi(u8 vec);
+void lapic_enable();
+// idt.c
+void idt_load(void);
+
 void pic_init(void)
 {
         // 重新映射 IRQ 表
@@ -126,7 +132,7 @@ void exception_init(void)
 	register_interrupt_handler(IRQ_NMI, ISR_EXCEPTION, exception_handler);
 }
 
-void arch_interrupt_init(void)
+void interrupt_init(void)
 {
     pic_init();
     if(apic_init()){
@@ -134,9 +140,17 @@ void arch_interrupt_init(void)
     }
     idt_init();
     exception_init();
+    interrupt_local_init();
 }
 
-void lapic_eoi(u8 vec);
+void interrupt_local_init(void)
+{
+    idt_load();
+    if(apic_init_ok){
+        lapic_enable();
+    }
+}
+
 void interrupt_eoi(u8 vec)
 {
     if (apic_init_ok) {
