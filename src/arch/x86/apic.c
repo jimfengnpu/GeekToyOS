@@ -42,7 +42,7 @@ static void add_lapic(struct madt_entry_lapic *entry)
 	lapic_list[lapic_list_size].id = entry->apic_id;
 	lapic_list[lapic_list_size].acpi_id = entry->acpi_id;
 	lapic_list_size++;
-	// klog("APIC:Detected Local APIC, id %d\n", entry->apic_id);
+	klog("APIC: Detected Local APIC, id %d\n", entry->apic_id);
 }
 
 static void add_ioapic(struct madt_entry_ioapic *entry)

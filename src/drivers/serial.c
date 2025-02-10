@@ -6,8 +6,8 @@
 #define COM2_PORT 0x2F8
 
 #ifdef SERIAL_DISABLE
-void serial_init(void) {}
-void serial_write_com(int UNUSED(com), unsigned char UNUSED(data)) {}
+int serial_init(void) { return 0;}
+void serial_write_com(int com, unsigned char data) {}
 #else
 
 static int serial_ok;

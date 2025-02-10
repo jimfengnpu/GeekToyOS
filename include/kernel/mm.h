@@ -51,4 +51,6 @@ void mem_init();
 void mm_init();
 // return phy mem addr
 addr_t mm_phy_page_alloc(size_t nr_pages);
+addr_t mm_phy_page_zalloc(size_t nr_pages);
+void mm_phy_page_free(addr_t addr, size_t nr_pages);
 #endif

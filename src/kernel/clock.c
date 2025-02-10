@@ -21,7 +21,6 @@ void clock_handler(trapframe_t *frame)
 		if(tm_time.tm_sec % 5== 0)
 		info("%s\n", strtime);
 	}
-	//wakeup(&ticks);
 }
 
 // void arch_clock_start(void); 
@@ -43,11 +42,16 @@ void clock_sleep(clock_t sleep_tick) {
 	}
 }
 
-void clock_sleep_watch_flag(clock_t sleep_tick, volatile int* flag, int original) {
+void clock_sleep_watch_flag(clock_t sleep_tick, volatile int* flag, int target, int change) {
 	clock_t start = ticks;
 	while(ticks != start + sleep_tick) {
 		pause();
-		if(*flag != original)
-			break;
+		if(change){
+			if(*flag != target)
+				break;
+		} else {
+			if(*flag == target)
+				break;	
+		}
 	}
 }

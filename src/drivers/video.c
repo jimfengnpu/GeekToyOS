@@ -91,6 +91,11 @@ int screen_init()
     screen_info.width = tag->common.framebuffer_width;
     screen_info.pitch = tag->common.framebuffer_pitch;
     screen_info.base = arch_kmap(tag->common.framebuffer_addr, align(screen_info.pitch*screen_info.height, PGSIZE));
+    // addr_t test = arch_kmap(0x4000000000UL, align(screen_info.pitch*screen_info.height, PGSIZE));
+    // addr_t check_pgtable(addr_t vaddr);
+    // if(check_pgtable(test) != 0x4000000000UL){
+    //     error("map error");
+    // }
     switch (tag->common.framebuffer_type)
     {
     case MULTIBOOT_FRAMEBUFFER_TYPE_RGB:

@@ -22,6 +22,9 @@ void kputchar(int ch)
 void cputchar(int ch)
 {
     kputchar(ch);
+    if(!(console_flag & CON_SCREEN)){
+        return;
+    }
     switch (ch)
     {
     case '\n':

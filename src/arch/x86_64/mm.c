@@ -4,7 +4,7 @@
 
 pgd_t *kernel_pgd;
 
-// flag:
+// internal flag:
 #define PG_ALLOC    4
 #define PG_2M   1
 #define PG_1G   2
@@ -13,8 +13,9 @@ static void expand_page(pde_t *pde, int table_level)
 {
     addr_t phy = PTADDR(*pde);
     int attr = PGOFF(PGOFF(*pde) & (~PTE_PS));
-    *pde = mm_phy_page_alloc(1) | (PTE_W|PTE_P);
-    pde_t *new_pg = kaddr(PTADDR(*pde));
+    addr_t new_pg_phy = mm_phy_page_zalloc(1);
+    *pde = new_pg_phy | (PTE_W|PTE_P);
+    pde_t *new_pg = kaddr(new_pg_phy);
     size_t pg_size = PGSIZE;
     if(table_level){
         pg_size = PTSIZE;
@@ -35,40 +36,53 @@ static  pte_t * pgdir_walk(pgd_t *pgdir, addr_t vaddr, addr_t *paddr, int flag)
         if (!alloc){
             return NULL;
         }
-        pgdir[pgx] = mm_phy_page_alloc(1) | pde_attr;
+        pgdir[pgx] = mm_phy_page_zalloc(1) | pde_attr;
     }
     pde = kaddr(PTADDR(pgdir[pgx]));
-    if((flag & PG_1G)) {
-        if(paddr){
-            *paddr = ((pde[pux] & (~bit_mask(PUXSHIFT))) | (vaddr & bit_mask(PUXSHIFT)));
-        }
-        return &pde[pux];
-    }
 
     if (!(pde[pux] & PTE_P)) {
         if (!alloc){
             return NULL;
         }
-        pde[pux] = mm_phy_page_alloc(1) | pde_attr;
-    }else if(pde[pux] & PTE_PS) {
-        expand_page(&pde[pux], 1);
-    }
-
-    pde = kaddr(PTADDR(pde[pux]));
-    if((flag & PG_2M)) {
-        if(paddr){
-            *paddr = ((pde[pdx] & (~bit_mask(PDXSHIFT))) | (vaddr & bit_mask(PDXSHIFT)));
+        if (flag & PG_1G) {
+            return &pde[pux];
         }
-        return &pde[pdx];
+        pde[pux] = mm_phy_page_zalloc(1) | pde_attr;
+    } else if((pde[pux] & PTE_PS)) {
+        if (!alloc) {
+            if(paddr){
+                *paddr = ((pde[pux] & (~bit_mask(PUXSHIFT))) | (vaddr & bit_mask(PUXSHIFT)));
+            }
+            return &pde[pux];
+        }
+        expand_page(&pde[pux], 1);
+    } else if((flag & PG_1G) && alloc){
+        warning("try to shrink page, page table phy mem free:");
+        mm_phy_page_free(PTADDR(pde[pux]), 1);
+        return &pde[pux];
     }
+    pde = kaddr(PTADDR(pde[pux]));
 
     if (!(pde[pdx] & PTE_P)) {
         if (!alloc){
             return NULL;
         }
-        pde[pdx] = mm_phy_page_alloc(1) | pde_attr;
-    }else if(pde[pdx] & PTE_PS) {
+        if (flag & PG_2M) {
+            return &pde[pdx];
+        }
+        pde[pdx] = mm_phy_page_zalloc(1) | pde_attr;
+    } else if ((pde[pdx] & PTE_PS)) {
+        if (!alloc) {
+            if(paddr){
+                *paddr = ((pde[pdx] & (~bit_mask(PDXSHIFT))) | (vaddr & bit_mask(PDXSHIFT)));
+            }
+            return &pde[pdx];
+        }
         expand_page(&pde[pdx], 0);
+    }else if((flag & PG_2M) && alloc){
+        warning("try to shrink page, page table phy mem free:");
+        mm_phy_page_free(PTADDR(pde[pdx]), 1);
+        return &pde[pdx];
     }
 
     pde = kaddr(PTADDR(pde[pdx]));
@@ -82,23 +96,29 @@ addr_t check_pgtable(addr_t vaddr)
 {
     addr_t addr = NULL;
     pte_t *pte = pgdir_walk(kernel_pgd, vaddr, &addr, 0);
-    if(pte==NULL){
-        debug("%lx=> no page\n", vaddr);
-    }
+    // if(pte==NULL){
+    //     debug("%lx=> no page\n", vaddr);
+    // }else {
+    //     debug("%lx=>%lx\n", vaddr, addr);
+    // }
     return addr;
 }
 
 static void __map_region(pgd_t *pgdir, addr_t vaddr, addr_t paddr, size_t size, int attr, int table_level)
 {
     
-    u64 pg_size = PGSIZE;// 0x1000
+    size_t pg_size = PGSIZE;// 0x1000
     if(table_level == 1)pg_size = PTSIZE; // 0x20_0000
     else if(table_level == 2)pg_size = PTSIZE*NPDENTRIES; // 0x4000_0000
+    if(!size){
+        return;
+    }
     addr_t vaddr_end = align(vaddr + size, pg_size);
     addr_t _vaddr = align_down(vaddr, pg_size);
     paddr = paddr - (vaddr - _vaddr);
     vaddr = _vaddr;
     int flag = PG_ALLOC|table_level;
+    klog("%lx --- %lx,%d, %lx\n", vaddr, vaddr_end, table_level, paddr);
     for(addr_t addr = vaddr; addr < vaddr_end;)
     {
         pte_t *pte = pgdir_walk(pgdir, addr, NULL, flag);
@@ -159,7 +179,7 @@ addr_t arch_kmap(addr_t phy, size_t sz) {
     phy = PTADDR(phy);
     addr_t va = kaddr(phy);
     if(check_pgtable(va) != phy)
-        arch_map_region(NULL, va, phy, sz, PTE_W);
+        arch_map_region(NULL, va, phy, sz, PTE_W | PTE_G);
     return va + pgoff;
 }
 

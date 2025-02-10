@@ -19,3 +19,6 @@ struct tm
 #define RTC_TIMEZONE	UTC// read cmos rtc as UTC
 
 int strftime(char *s, int max, const char *fmt, struct tm* tm_time);
+struct tm* gmtime(u32 timestamp, struct tm* tm_time);
+struct tm* localtime(u32 timestamp, struct tm* tm_time);
+u32 mktime(struct tm* time);

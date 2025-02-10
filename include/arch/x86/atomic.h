@@ -5,8 +5,8 @@
 static inline int atomic_inc(void *ptr){
     int origin;
 	asm volatile(
+		"movl %0, %%ecx\n\t"
 		"lock\n\t"
-        "movl %0, %%ecx\n\t"
         "incl %0"
 		:"+m" ((*(int*)ptr)), "=c" (origin):: "memory");
     return origin;

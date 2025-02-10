@@ -169,6 +169,13 @@ addr_t mm_phy_page_alloc(size_t nr_pages)
     return (pfn << PGSHIFT);
 }
 
+addr_t mm_phy_page_zalloc(size_t nr_pages)
+{
+    addr_t phy = mm_phy_page_alloc(nr_pages);
+    memset(kaddr(phy), 0, nr_pages * PGSIZE);
+    return phy;
+}
+
 void mm_phy_page_free(addr_t addr, size_t nr_pages)
 {
     if(PGOFF(addr)){
@@ -181,5 +188,7 @@ void mm_phy_page_free(addr_t addr, size_t nr_pages)
         warning("phy addr double free:pfn_0x%x\n", check);
     }
     bitmap_set(&mem_map, MEM_PAGE_AVAIL, pfn_start, nr_pages);
-    buddy_page_free(&mem_zone, pfn_start, nr_pages);
+    if (buddy_mem_ready){
+        buddy_page_free(&mem_zone, pfn_start, nr_pages);
+    }
 }

@@ -75,7 +75,7 @@ else
 QEMU_BIOS_OPT=-bios /usr/share/qemu/OVMF.fd
 endif
 
-QEMU_OPT= $(QEMU_BIOS_OPT) -smp cpus=4 -m 4G -serial file:kernel.log  -device VGA -monitor stdio -no-reboot -M q35
+QEMU_OPT= $(QEMU_BIOS_OPT) -smp cpus=4 -m 2G -serial file:kernel.log  -device VGA -monitor stdio -no-reboot -M q35
 # disk & grub
 ifeq ($(BOOT_TYPE),pc)
 MK_DISK=fdisk

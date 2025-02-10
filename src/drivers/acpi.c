@@ -52,7 +52,6 @@ static struct acpi_header *acpi_iter(int (*acpi_handler)(struct acpi_header*, co
         }
     }else {
         for_ptr_entry(u32, entry, table_start, table_end){
-            debug("table addr:%lx ", *entry);
             struct acpi_header *table = acpi_remap(*entry);
             if(acpi_handler(table, arg)){
                 return table;

@@ -37,7 +37,7 @@ void sched_yield()
 
 void sched_handler(trapframe_t *frame){
 	if(ticks % HZ == 0){
-		info("%d ", smp_cpuid());
+		info("%d ", (int)smp_cpuid());
 	}
 }
 
