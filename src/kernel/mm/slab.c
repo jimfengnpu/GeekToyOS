@@ -79,6 +79,7 @@ static struct slab *cache_grow(struct kmem_cache *cachep)
         *((void**)obj) = freelist;
         freelist = obj;
     }
+    slab->freelist = freelist;
     return slab;
 }
 
@@ -163,7 +164,7 @@ static int kmalloc_size_index(size_t size)
         fls += 2;
         size >>= 2;
     }
-    last2bit = fls;
+    last2bit = size;
     if (size & 0x2) {
         fls ++;
         size >>= 1;

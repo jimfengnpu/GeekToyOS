@@ -19,11 +19,9 @@ void kernel_main()
     interrupt_init();
     clock_init();
     interrupt_enable();
-
-
     
     cprintf("Hello GeekToyOS!\n");
-
+    
     smp_init();
     sched_start();
 }
@@ -32,7 +30,7 @@ void ap_main()
 {
     interrupt_local_init();
     interrupt_enable();
-
+    smp_percpu_init();
     smp_notify_ready();
     sched_start();
 }
@@ -66,4 +64,14 @@ void _panic(const char * file, int line, const char *fmt, ...)
     vcprintf(fmt, ap);
     va_end(ap);
     halt();
+}
+
+void traceback(void** sp)
+{
+    cprintf("traceback:\n");
+    int i = 0;
+    while(sp && i < 6 ){
+        cprintf("\t->%lx\n", *(sp+1));
+        sp = *sp;
+    }
 }

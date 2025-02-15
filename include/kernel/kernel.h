@@ -34,6 +34,6 @@ void _klog(const char *, int, int, const char *fmt, ...);
 #define klog(...) _klog(__FILENAME__, __LINE__, LOG_DEBUG, __VA_ARGS__)
 void _panic(const char *, int, const char *fmt, ...);
 #define panic(...) _panic(__FILENAME__, __LINE__, __VA_ARGS__)
-
+void traceback(void** sp);
 
 #endif

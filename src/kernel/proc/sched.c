@@ -5,27 +5,29 @@
 #include <kernel/spinlock.h>
 #include <atomic.h>
 
-static int atomic_preempt_count;
-static struct spinlock preempt_lock[MAX_CORES];
-
 void preempt_enable()
 {
-	if(atomic_dec_and_test(&atomic_preempt_count)){
-		release(&preempt_lock[smp_cpuid()]);
+	if(atomic_dec_and_test(&thiscpu->atomic_preempt_count)){
+		release(&thiscpu->preempt_lock);
 	}
 }
 
 void preempt_disable()
 {
-	if(atomic_inc(&atomic_preempt_count)){
+	if(atomic_inc(&thiscpu->atomic_preempt_count)){
 		return;
 	}
-	acquire(&preempt_lock[smp_cpuid()]);
+	acquire(&thiscpu->preempt_lock);
 }
 
 static int scheduler_check_resched()
 {
 
+}
+
+struct task *idle_init()
+{
+	return NULL;
 }
 
 void sched_idle(){

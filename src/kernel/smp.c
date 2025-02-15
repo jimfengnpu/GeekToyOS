@@ -18,6 +18,7 @@ void smp_init(void)
         klog("SMP: no mp, fallback to single cpu\n");
         return;
     }
+    smp_percpu_init();
     smp_notify_ready();
     arch_smp_init();
     clock_sleep_watch_flag(1, &smp_cpu_ready_count, smp_cpunum(), 0);

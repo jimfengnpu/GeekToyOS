@@ -4,6 +4,7 @@
 #include <kernel/clock.h>
 #include <lib/string.h>
 #include <apic.h>
+#include <percpu.h>
 
 extern char mp_start[];
 extern char mp_end[];
@@ -13,12 +14,13 @@ volatile u8* mp_stacktop;
 
 extern struct lapic_info lapic_list[MAX_LAPICS];
 
+struct percpu *percpu_table[MAX_CORES] = { 0 };
 
 u8 smp_cpunum(void){
     return lapic_num();
 }
 
-u8 smp_cpuid(void){
+u8 __smp_cpuid(void){
     u8 id = lapic_id();
 	for(u8 i = 0; i < lapic_num(); i++){
 		if(lapic_list[i].id == id){
@@ -26,6 +28,10 @@ u8 smp_cpuid(void){
 		}
 	}
 	panic("lapic id not found!");
+}
+
+u8 smp_cpuid(void){
+    return thiscpu->id;
 }
 
 static void smp_boot(u8 id)
@@ -74,4 +80,17 @@ void arch_smp_init()
     }
     arch_map_region(NULL, MP_BASE, 0, mp_end - mp_start, PG_CLEAR);
     arch_clear_low_page();
+}
+
+void smp_percpu_init()
+{
+	u8 id = __smp_cpuid();
+	struct percpu *percpu_data = kmalloc(sizeof(struct percpu));
+	struct task *idle = idle_init();
+	percpu_table[id] = percpu_data;
+	percpu_table[id]->id = id;
+	percpu_table[id]->idle_task = idle;
+	percpu_table[id]->current_task = idle;
+	percpu_table[id]->atomic_preempt_count = 0;
+	msr_write(0xC0000101, percpu_data);
 }

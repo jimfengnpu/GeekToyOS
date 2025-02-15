@@ -111,6 +111,7 @@ static void exception_handler(trapframe_t *frame)
 			int_no = 2;
 			// fallthrough
 		default:
+            traceback((void *)frame->sp);
 			panic(
 				"%s:\n"
 				"\tip: %p, sp: %p\n"

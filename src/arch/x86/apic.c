@@ -3,7 +3,7 @@
 #include <kernel/interrupt.h>
 #include <kernel/clock.h>
 #include <kernel/mm.h>
-#include <smp.h>
+#include <kernel/smp.h>
 
 #define APIC_CPUID_BIT (1 << 9)
 #define APIC_TIMER_PERIODIC 0x20000U
