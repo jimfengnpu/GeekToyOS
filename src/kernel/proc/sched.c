@@ -1,9 +1,9 @@
 #include <kernel/kernel.h>
 #include <kernel/sched.h>
 #include <kernel/clock.h>
+#include <kernel/smp.h>
 #include <kernel/spinlock.h>
 #include <atomic.h>
-#include <smp.h>
 
 static int atomic_preempt_count;
 static struct spinlock preempt_lock[MAX_CORES];
@@ -23,11 +23,21 @@ void preempt_disable()
 	acquire(&preempt_lock[smp_cpuid()]);
 }
 
+static int scheduler_check_resched()
+{
+
+}
+
 void sched_idle(){
 	while(1){
 		interrupt_enable();
 		halt();
 	}
+}
+
+void schedule()
+{
+
 }
 
 void sched_yield()
@@ -36,12 +46,18 @@ void sched_yield()
 }
 
 void sched_handler(trapframe_t *frame){
-	if(ticks % HZ == 0){
-		info("%d ", (int)smp_cpuid());
-	}
+	// if(ticks % HZ == 0){
+	// 	info("%d ", (int)smp_cpuid());
+	// }
+}
+
+void sched_init()
+{
+
 }
 
 void sched_start(){
 	arch_local_clock_enable();
 	sched_yield();
+	sched_idle();
 }

@@ -4,6 +4,10 @@
 #include <kernel/mm.h>
 
 
+struct runq {
+
+};
+
 struct task {
     size_t pid;
     unsigned long task_flag;

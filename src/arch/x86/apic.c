@@ -3,6 +3,7 @@
 #include <kernel/interrupt.h>
 #include <kernel/clock.h>
 #include <kernel/mm.h>
+#include <smp.h>
 
 #define APIC_CPUID_BIT (1 << 9)
 #define APIC_TIMER_PERIODIC 0x20000U
@@ -168,7 +169,7 @@ u32 lapic_timer_prepare(void)
 	lapic_write(APIC_REG_TIMER_LVT, APIC_DISABLE);
 
 	u32 ticks_per_10ms = (ticks_initial - lapic_read(APIC_REG_TIMER_CURRENT)) / (test_ms / 10);
-	klog("LAPIC:test tick/10ms:%d\n", ticks_per_10ms);
+	klog("LAPIC: cpu %d test tick/10ms:%d\n", smp_cpuid(), ticks_per_10ms);
 	
 	return ticks_per_10ms;
 }

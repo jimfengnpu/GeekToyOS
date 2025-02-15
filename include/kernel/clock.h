@@ -10,7 +10,8 @@ extern clock_t ticks;
 void clock_init();
 void clock_handler(trapframe_t *frame);
 void clock_sleep(clock_t sleep_tick);
-void clock_sleep_watch_flag(clock_t sleep_tick, volatile int* flag, int target, int change);
+
+int clock_sleep_watch_flag(clock_t sleep_tick, volatile int* flag, int target, int change);
 u32 arch_get_hw_timestamp();
 int arch_clock_init();
 void arch_clock_start();

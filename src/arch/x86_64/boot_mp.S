@@ -35,7 +35,6 @@ _L_GDT_table:
         .long 0x00CF9A00    # flat code
         .long 0x0000FFFF
         .long 0x00CF9200    # flat data
-        # .long 0x00000068, 0x00CF8900    # tss
 _L_GDT_PTR:
         .short _L_GDT_PTR - _L_GDT_table - 1
         .long  LABEL(_L_GDT_table)

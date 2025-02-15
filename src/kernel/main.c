@@ -3,9 +3,9 @@
 #include <kernel/mm.h>
 #include <kernel/clock.h>
 #include <kernel/sched.h>
+#include <kernel/smp.h>
 #include <kernel/spinlock.h>
 #include <drivers/acpi.h>
-#include <smp.h>
 
 void kernel_main()
 {
@@ -19,12 +19,13 @@ void kernel_main()
     interrupt_init();
     clock_init();
     interrupt_enable();
-    smp_init();
 
+
+    
     cprintf("Hello GeekToyOS!\n");
-    sched_start();
-    while(1)halt();
 
+    smp_init();
+    sched_start();
 }
 
 void ap_main()
@@ -32,9 +33,8 @@ void ap_main()
     interrupt_local_init();
     interrupt_enable();
 
-    smp_sync_ready();
+    smp_notify_ready();
     sched_start();
-    while(1)halt();
 }
 
 static struct spinlock klog_lock;

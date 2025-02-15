@@ -1,8 +1,8 @@
 #include <kernel/kernel.h>
+#include <kernel/smp.h>
 #include <kernel/mm.h>
 #include <kernel/clock.h>
 #include <lib/string.h>
-#include <atomic.h>
 #include <apic.h>
 
 extern char mp_start[];
@@ -13,7 +13,6 @@ volatile u8* mp_stacktop;
 
 extern struct lapic_info lapic_list[MAX_LAPICS];
 
-static int smp_cpu_ready_count;
 
 u8 smp_cpunum(void){
     return lapic_num();
@@ -65,13 +64,8 @@ static void smp_boot(u8 id)
 	mp_stacktop = NULL;
 }
 
-void smp_init()
+void arch_smp_init()
 {
-    if (lapic_num() == 1) {
-        klog("SMP: no mp, fallback to single cpu\n");
-        return;
-    }
-	klog("SMP: cpu %d online\n", smp_cpuid());
     arch_map_region(NULL, MP_BASE, MP_BASE, mp_end - mp_start, PTE_W);
     memcpy(MP_BASE, mp_start, mp_end - mp_start);
     for(u8 i = 1; i < smp_cpunum(); i++)
@@ -80,13 +74,4 @@ void smp_init()
     }
     arch_map_region(NULL, MP_BASE, 0, mp_end - mp_start, PG_CLEAR);
     arch_clear_low_page();
-	smp_sync_ready();
-	info("SMP: %d cpu online\n", smp_cpu_ready_count);
-}
-
-void smp_sync_ready()
-{
-	klog("SMP: cpu %d online\n", smp_cpuid());
-	atomic_inc(&smp_cpu_ready_count);
-	clock_sleep_watch_flag(2, &smp_cpu_ready_count, smp_cpunum(), 0);
 }

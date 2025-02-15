@@ -96,11 +96,6 @@ addr_t check_pgtable(addr_t vaddr)
 {
     addr_t addr = NULL;
     pte_t *pte = pgdir_walk(kernel_pgd, vaddr, &addr, 0);
-    // if(pte==NULL){
-    //     debug("%lx=> no page\n", vaddr);
-    // }else {
-    //     debug("%lx=>%lx\n", vaddr, addr);
-    // }
     return addr;
 }
 
@@ -118,12 +113,10 @@ static void __map_region(pgd_t *pgdir, addr_t vaddr, addr_t paddr, size_t size, 
     paddr = paddr - (vaddr - _vaddr);
     vaddr = _vaddr;
     int flag = PG_ALLOC|table_level;
-    klog("%lx --- %lx,%d, %lx\n", vaddr, vaddr_end, table_level, paddr);
     for(addr_t addr = vaddr; addr < vaddr_end;)
     {
         pte_t *pte = pgdir_walk(pgdir, addr, NULL, flag);
-        // if(pte == NULL){
-        // }
+
         *pte = paddr | attr | ((table_level)?PTE_PS:0);
         addr += pg_size;
         paddr += pg_size;

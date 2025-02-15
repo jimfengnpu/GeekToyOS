@@ -146,6 +146,9 @@ void mem_init(){
 void mm_init(){
     // phy mem init(buddy system)
     pmm_init();
+    // now use buddy
+    // kmem_cache(slab) init
+    kmem_init();
 }
 
 addr_t mm_phy_page_alloc(size_t nr_pages)

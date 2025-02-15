@@ -123,36 +123,7 @@ start:
         or      $(PDE_ATTR_P | PDE_ATTR_RW), %eax
         mov     %eax, pud
 
-        
-        /*mov     $pud, %ebx
-        mov     $pmd, %eax
-        add     $(PAGE_SIZE), %eax
-        or      $(PDE_ATTR_P | PDE_ATTR_RW), %eax
-        mov     %eax, 8(%ebx)*/
-        /*
-        mov     $pmd, %eax
-        add     $(2*PAGE_SIZE), %eax
-        or      $(PDE_ATTR_P | PDE_ATTR_RW), %eax
-        mov     %eax, 16(%ebx)
-
-        mov     $pmd, %eax
-        add     $(3*PAGE_SIZE), %eax
-        or      $(PDE_ATTR_P | PDE_ATTR_RW), %eax
-        mov     %eax, 24(%ebx)
-        */
-        /*
-        mov     $pagetable, %eax
-        or      $(PDE_ATTR_P | PDE_ATTR_RW), %eax
-        mov     %eax, pmd
-
-        mov     $pmd, %ebx
-        mov     $pagetable, %eax
-        add     $(PAGE_SIZE), %eax
-        or      $(PDE_ATTR_P | PDE_ATTR_RW), %eax
-        mov     %eax, 8(%ebx)
-        */
         xor     %ecx, %ecx
-        //movl    $pagetable, %ebx
         movl    $pmd, %ebx
 .loop_makepage:
         movl    %ecx, %eax
@@ -167,8 +138,6 @@ start:
         xor     %eax, %eax
         mov     %eax, (pgd + 4)
         mov     %eax, (pud + 4)
-        //mov     %eax, (pmd + 4)
-        //mov     %eax, (pmd + 12)
         # load page table
         mov     $pgd, %eax
         mov     %eax, %cr3

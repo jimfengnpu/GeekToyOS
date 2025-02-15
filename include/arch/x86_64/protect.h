@@ -59,7 +59,7 @@
 #define IST_DOUBLE_FAULT 2
 
 // TSS 描述符
-typedef struct tss_entry_s {
+typedef struct tss_entry32_s {
         u32 link;         // old ts selector
         u32 esp0;         // stack pointers and segment selectors
         u16 ss0;          // after an increase in privilege level
@@ -97,7 +97,7 @@ typedef struct tss_entry_s {
         u16 padding10;
         u16 t;            // trap on task switch
         u16 iomb;         // i/o map base address
-} __attribute__((packed)) tss_t;
+} __attribute__((packed)) tss32_t;
 
 // TSS 描述符
 typedef struct tss_entry64_s {
@@ -131,7 +131,7 @@ typedef struct descriptor {
 // GDT pointer structure
 typedef struct gdt_ptr_s {
     u16 limit;
-    u32 base;
+    addr_t base;
 } __attribute__((packed)) gdt_ptr;
 
 #endif

@@ -23,7 +23,6 @@ void clock_handler(trapframe_t *frame)
 	}
 }
 
-// void arch_clock_start(void); 
 void clock_init(){
 	ticks = 0;
 	if (!arch_clock_init()){
@@ -35,6 +34,8 @@ void clock_init(){
 	interrupt_enable_irq(CLOCK_IRQ);
 }
 
+/// @brief sleep by global clock interrupt
+/// @param sleep_tick 
 void clock_sleep(clock_t sleep_tick) {
 	clock_t start = ticks;
 	while(ticks != start + sleep_tick) {
@@ -42,16 +43,23 @@ void clock_sleep(clock_t sleep_tick) {
 	}
 }
 
-void clock_sleep_watch_flag(clock_t sleep_tick, volatile int* flag, int target, int change) {
+/// @brief 等待至多 sleep_tick ticks, 立即返回当检测到: flag != target(change==1) 或 flag == target(change==0）
+/// @param sleep_tick 
+/// @param flag watch flag ptr
+/// @param target if change == 1, original value of flag ,else watch target value
+/// @param change trigger mode
+/// @return 1: flag triggered; 0: timeout
+int clock_sleep_watch_flag(clock_t sleep_tick, volatile int* flag, int target, int change) {
 	clock_t start = ticks;
 	while(ticks != start + sleep_tick) {
 		pause();
 		if(change){
 			if(*flag != target)
-				break;
+				return 1;
 		} else {
 			if(*flag == target)
-				break;	
+				return 1;	
 		}
 	}
+	return 0;
 }
