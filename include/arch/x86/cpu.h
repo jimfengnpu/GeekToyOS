@@ -172,6 +172,7 @@ static inline void cpuid(u32 code, u32 *a, u32 *b, u32 *c, u32 *d) {
 	if(d)*d=dx;
 }
 
+void fetch_cpu_feature();
 int check_cpu_feature(int type);
 
 #endif

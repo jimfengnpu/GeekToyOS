@@ -33,6 +33,40 @@ static color_palette vga_palette[16] = {
     make_vga_palette(WHITE),
 };
 
+static size_t dirty_xstart;
+static size_t dirty_xend;
+static size_t dirty_ystart;
+static size_t dirty_yend;
+static int buffer_dirty;
+
+static void screen_flush_buffer()
+{   
+    if(buffer_dirty){
+        size_t psize = screen_info.bpp;
+        for(size_t y = dirty_ystart; y < dirty_yend; y++){
+            size_t offs = screen_info.pitch*y + dirty_xstart*psize;
+            memcpy(screen_info.base + offs, screen_info.buffer + offs, (dirty_xend - dirty_xstart)*psize);
+        }
+        buffer_dirty = 0;
+    }
+}
+
+static void screen_buffer_write(size_t xstart, size_t xend, size_t ystart, size_t yend)
+{
+    if(buffer_dirty){
+        dirty_xstart = min(dirty_xstart, xstart);
+        dirty_xend = max(dirty_xend, xend);
+        dirty_ystart = min(dirty_ystart, ystart);
+        dirty_yend = max(dirty_yend, yend);
+    } else {
+        dirty_xstart = xstart;
+        dirty_xend = xend;
+        dirty_ystart = ystart;
+        dirty_yend = yend;
+        buffer_dirty = 1;
+    }
+}
+
 void psf_init()
 {
     u16 glyph = 0;
@@ -91,6 +125,7 @@ int screen_init()
     screen_info.width = tag->common.framebuffer_width;
     screen_info.pitch = tag->common.framebuffer_pitch;
     screen_info.base = arch_kmap(tag->common.framebuffer_addr, align(screen_info.pitch*screen_info.height, PGSIZE));
+    screen_info.buffer = kaddr(mm_phy_page_zalloc(align(screen_info.pitch*screen_info.height, PGSIZE)/PGSIZE));
     // addr_t test = arch_kmap(0x4000000000UL, align(screen_info.pitch*screen_info.height, PGSIZE));
     // addr_t check_pgtable(addr_t vaddr);
     // if(check_pgtable(test) != 0x4000000000UL){
@@ -142,7 +177,7 @@ static void screen_put_pixel(size_t x, size_t y, u32 pixel)
         return;
     }
     size_t psize = screen_info.bpp;
-    addr_t pptr = screen_info.base + y*screen_info.pitch + x*psize;
+    addr_t pptr = screen_info.buffer + y*screen_info.pitch + x*psize;
     switch (psize)
     {
     case 1:
@@ -168,7 +203,7 @@ void screen_move(int ystep, u32 fill_color)
     fill_color = trans_color2pixel(fill_color);
     if(ystep >= 0)
     {
-        memmove(screen_info.base + ystep*screen_info.pitch, screen_info.base, (screen_info.height - ystep)*screen_info.pitch);
+        memmove(screen_info.buffer + ystep*screen_info.pitch, screen_info.buffer, (screen_info.height - ystep)*screen_info.pitch);
         for(u32 y=0; y < ystep; y++)
         {
             for(u32 x=0; x < screen_info.width; x++)
@@ -179,7 +214,7 @@ void screen_move(int ystep, u32 fill_color)
     }else
     {
         ystep *= -1;
-        memmove(screen_info.base, screen_info.base + ystep*screen_info.pitch, (screen_info.height - ystep)*screen_info.pitch);
+        memmove(screen_info.buffer, screen_info.base + ystep*screen_info.pitch, (screen_info.height - ystep)*screen_info.pitch);
         for(u32 y=screen_info.height - ystep; y < screen_info.height; y++)
         {
             for(u32 x=0; x < screen_info.width; x++)
@@ -188,6 +223,8 @@ void screen_move(int ystep, u32 fill_color)
             }
         }
     }
+    screen_buffer_write(0, screen_info.width, 0, screen_info.height);
+    screen_flush_buffer();
 }
 
 // color:RGB
@@ -233,6 +270,7 @@ void screen_input_char(u32 x, u32 y, u32 front_color, u32 back_color, u32 chr)
     {
         pixel = ((((pixel & 0xF) | ((pixel_back & 0xF) << 4))<<8) | (chr & 0xFF));
         screen_put_pixel(x, y, pixel);
+        screen_buffer_write(x, x+1, y, y+1);
     } else 
     {
         if(chr >= UINT16_MAX){
@@ -266,5 +304,7 @@ void screen_input_char(u32 x, u32 y, u32 front_color, u32 back_color, u32 chr)
             /* adjust to the next line */
             glyph += bytesperline;
         }
+        screen_buffer_write(x, x+fwidth, y, y+fheight);
     }
+    screen_flush_buffer();
 }

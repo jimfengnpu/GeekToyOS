@@ -71,6 +71,7 @@ typedef struct {
 
 typedef struct screen_info{
     addr_t base;
+    addr_t buffer;
     u32 width;
     u32 height;
     u32 pitch; // mem bytes for one line

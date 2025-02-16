@@ -4,8 +4,6 @@
 
 struct percpu {
     size_t  id;
-    struct task* current_task;
-    struct task *idle_task;
     struct runq *runqueue;
     struct spinlock preempt_lock;
     int atomic_preempt_count;

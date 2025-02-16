@@ -89,8 +89,6 @@ void smp_percpu_init()
 	struct task *idle = idle_init();
 	percpu_table[id] = percpu_data;
 	percpu_table[id]->id = id;
-	percpu_table[id]->idle_task = idle;
-	percpu_table[id]->current_task = idle;
 	percpu_table[id]->atomic_preempt_count = 0;
 	msr_write(0xC0000101, percpu_data);
 }

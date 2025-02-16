@@ -48,14 +48,14 @@ void sched_yield()
 }
 
 void sched_handler(trapframe_t *frame){
-	// if(ticks % HZ == 0){
-	// 	info("%d ", (int)smp_cpuid());
-	// }
+	if(ticks % HZ == 0){
+		info("%d ", (int)smp_cpuid());
+	}
 }
 
 void sched_init()
 {
-
+	
 }
 
 void sched_start(){

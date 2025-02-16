@@ -23,6 +23,7 @@ void kernel_main()
     cprintf("Hello GeekToyOS!\n");
     
     smp_init();
+    sched_init();
     sched_start();
 }
 
@@ -32,6 +33,7 @@ void ap_main()
     interrupt_enable();
     smp_percpu_init();
     smp_notify_ready();
+    sched_init();
     sched_start();
 }
 

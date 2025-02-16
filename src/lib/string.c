@@ -1,11 +1,28 @@
+#include <lib/const.h>
 #include <lib/string.h>
 
 void* memcpy(void* dst, const void* src, size_t n) {
     char *d = dst;
     const char *s = src;
-    while (n > 0) {
+    long* dptr = align((addr_t)d, word_size);
+    long* dptr_end = align_down((addr_t)d+n, word_size);
+    ssize_t sz = n;
+    while (sz > 0 && d < (char*)dptr) {
         *(d++) = *(s++);
-        n--;
+        sz--;
+    }
+    long* sptr = (long*)s;
+    if(!((addr_t) sptr & size_mask(word_size))){
+        while (sz > 0 && d < (char*)dptr_end) {
+            *(dptr++) = *(sptr++);
+            sz -= word_size;
+        }
+        d = (char*)dptr;
+        s = (char*)sptr;
+    }
+    while (sz > 0) {
+        *(d++) = *(s++);
+        sz--;
     }
     return dst;
 }
